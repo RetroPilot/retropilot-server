@@ -1,4 +1,7 @@
 # retropilot-server
+
+![CI workflow](https://github.com/RetroPilot/retropilot-server/actions/workflows/ci.yml/badge.svg)
+
 Replacement for comma.ai backend and useradmin dashboard. Bundled with a modified version of comma's cabana to allow viewing & analyzing drives.
 
 If you don't want to host your own instance, check out https://api.retropilot.org/useradmin for a hosted version of the backend, useradmin and cabana.
