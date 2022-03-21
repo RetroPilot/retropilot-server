@@ -54,7 +54,7 @@ if (process.env.ATHENA_ENABLED) {
   logger.log('Athena disabled');
 }
 
-app.use(cors({ origin: 'http://localhost:3000' }));
+app.use(cors({ origin: 'http://localhost:8080' }));
 app.use(cookieParser());
 app.use('/favicon.ico', express.static('static/favicon.ico'));
 app.use(process.env.BASE_DRIVE_DOWNLOAD_PATH_MAPPING, express.static(process.env.STORAGE_PATH));

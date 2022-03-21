@@ -23,5 +23,5 @@ RUN npm run build
 
 COPY --from=cabana /cabana/build cabana
 
-EXPOSE 3000
+EXPOSE 8080
 CMD ["npm", "run", "server"]
