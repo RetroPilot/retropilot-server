@@ -21,7 +21,13 @@ function mkDirByPathSync(targetDir, { isRelativeToScript = false } = {}) {
   const { sep } = path;
   const initDir = path.isAbsolute(targetDir) ? sep : '';
 
-  const baseDir = isRelativeToScript ? __dirname : '.';
+  let baseDir;
+  if (isRelativeToScript) {
+    // retropilot-server/dist/server/controllers/../../.. => retropilot-server
+    baseDir = path.join(__dirname, '..', '..', '..');
+  } else {
+    baseDir = '.';
+  }
 
   return targetDir.split(sep).reduce((parentDir, childDir) => {
     const curDir = path.resolve(baseDir, parentDir, childDir);
