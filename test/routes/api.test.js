@@ -1,10 +1,16 @@
 import request from 'supertest';
-import dummyGenerator from './../dummyGenerator';
+import dummyGenerator from '../dummyGenerator';
 
 export default (app) => {
-  describe('/v2/pilotauth/ - Testing device registration', function () {
-    it('Returns dongle ID on valid registration', function (done) {
-      request(app)
+  let server;
+
+  before(async () => {
+    server = await app;
+  });
+
+  describe('/v2/pilotauth/ - Testing device registration', () => {
+    it('Returns dongle ID on valid registration', (done) => {
+      request(server)
         .post('/v2/pilotauth/')
         .query({
           imei: dummyGenerator.getImei(),
@@ -24,8 +30,8 @@ export default (app) => {
         .end(done);
     });
 
-    it('Returns 400 when incorrect public key given', function (done) {
-      request(app)
+    it('Returns 400 when incorrect public key given', (done) => {
+      request(server)
         .post('/v2/pilotauth/')
         .query({
           imei: dummyGenerator.getImei(),
@@ -40,8 +46,8 @@ export default (app) => {
         .end(done);
     });
 
-    it('Returns 400 when missing register_token', function (done) {
-      request(app)
+    it('Returns 400 when missing register_token', (done) => {
+      request(server)
         .post('/v2/pilotauth/')
         .query({
           imei: dummyGenerator.getImei(),
@@ -56,8 +62,8 @@ export default (app) => {
         .end(done);
     });
 
-    it('Returns 400 when missing query', function (done) {
-      request(app)
+    it('Returns 400 when missing query', (done) => {
+      request(server)
         .post('/v2/pilotauth/')
 
         .set('Accept', 'application/x-www-form-urlencoded')

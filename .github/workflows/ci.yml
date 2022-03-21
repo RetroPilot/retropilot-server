@@ -1,4 +1,4 @@
-name: CI
+name: Build and test
 
 on: [push, pull_request]
 
@@ -12,5 +12,5 @@ jobs:
         run: docker build -t retropilot-server:latest .
       - name: Run linter
         run: docker run --rm retropilot-server:latest npm run lint
-#      - name: Run tests
-#        run: docker run --rm -v $(pwd)/config.sample.js:/app/config.js retropilot-server:latest npm test
+      - name: Run tests
+        run: docker run --rm --env-file .env.sample -v /tmp/realdata:/app/realdata retropilot-server:latest npm test

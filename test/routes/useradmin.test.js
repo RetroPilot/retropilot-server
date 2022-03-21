@@ -2,9 +2,15 @@ import request from 'supertest';
 import dummyGenerator from '../dummyGenerator';
 
 export default (app) => {
+  let server;
+
+  before(async () => {
+    server = await app;
+  });
+
   describe('/useradmin', () => {
     it('Page load', (done) => {
-      request(app)
+      request(server)
         .get('/useradmin')
         .expect('Content-Type', /html/)
         .expect(200)
@@ -12,7 +18,7 @@ export default (app) => {
     });
 
     it('Redirect on existing session', (done) => {
-      request(app)
+      request(server)
         .get('/useradmin')
         // pull sessions from a store
         .set('Cookie', ['session=s%3Aj%3A%7B%22account%22%3A%22adam%40adamblack.us%22%2C%22expires%22%3A1653171350726%7D.cRX19pNfx6mCGZ9ZYHcUIyy5CAQVMDgKrp%2F%2Bf7NFVYA;'])
@@ -24,7 +30,7 @@ export default (app) => {
 
   describe('/useradmin/register/token', () => {
     it('No duplicate emails', (done) => {
-      request(app)
+      request(server)
         .post('/useradmin/register/token')
         // TODO add dedicated DB/user account for tests to run on
         .send(`email=${dummyGenerator.alreadyRegisteredEmail}`)
@@ -34,7 +40,7 @@ export default (app) => {
     });
 
     it('Accepts new accounts', (done) => {
-      request(app)
+      request(server)
         .post('/useradmin/register/token')
         // TODO add dedicated DB/user account for tests to run on
         .send(`email=${dummyGenerator.newUserEmail}`)
