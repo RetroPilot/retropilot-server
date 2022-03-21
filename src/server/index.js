@@ -1,5 +1,3 @@
-import 'dotenv/config';
-import http from 'http';
 import log4js from 'log4js';
 
 log4js.configure({
@@ -13,17 +11,4 @@ process.on('unhandledRejection', (error, p) => {
   console.dir(error.stack);
 });
 
-const main = async () => {
-  const logger = log4js.getLogger('default');
-  const httpServer = http.createServer(await require('./app').default);
-
-  httpServer.listen(process.env.HTTP_PORT, () => {
-    logger.info(`RetroPilot Server listening at ${process.env.BASE_URL}`);
-  });
-};
-
-try {
-  main();
-} catch (e) {
-  console.error(e);
-}
+require('./server');
