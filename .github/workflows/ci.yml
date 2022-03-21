@@ -3,14 +3,26 @@ name: Build and test
 on: [push, pull_request]
 
 jobs:
-  build:
-    name: Build and test
+  docker:
+    name: Build Docker image
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
       - name: Build Docker image
         run: docker build -t retropilot-server:latest .
+
+  lint:
+    name: Run linter
+    runs-on: ubuntu-20.04
+    needs: docker
+    steps:
       - name: Run linter
         run: docker run --rm retropilot-server:latest npm run lint
+
+  test:
+    name: Run tests
+    runs-on: ubuntu-20.04
+    needs: docker
+    steps:
       - name: Run tests
         run: docker run --rm --env-file .env.sample -v /tmp/realdata:/app/realdata retropilot-server:latest npm test
