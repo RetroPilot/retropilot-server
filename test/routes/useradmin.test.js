@@ -1,9 +1,9 @@
 import request from 'supertest';
-import dummyGenerator from './../dummyGenerator';
+import dummyGenerator from '../dummyGenerator';
 
 export default (app) => {
-  describe('/useradmin', function () {
-    it('Page load', function (done) {
+  describe('/useradmin', () => {
+    it('Page load', (done) => {
       request(app)
         .get('/useradmin')
         .expect('Content-Type', /html/)
@@ -11,7 +11,7 @@ export default (app) => {
         .end(done);
     });
 
-    it('Redirect on existing session', function (done) {
+    it('Redirect on existing session', (done) => {
       request(app)
         .get('/useradmin')
         // pull sessions from a store
@@ -22,8 +22,8 @@ export default (app) => {
     });
   });
 
-  describe('/useradmin/register/token', function () {
-    it('No duplicate emails', function (done) {
+  describe('/useradmin/register/token', () => {
+    it('No duplicate emails', (done) => {
       request(app)
         .post('/useradmin/register/token')
         // TODO add dedicated DB/user account for tests to run on
@@ -33,7 +33,7 @@ export default (app) => {
         .end(done);
     });
 
-    it('Accepts new accounts', function (done) {
+    it('Accepts new accounts', (done) => {
       request(app)
         .post('/useradmin/register/token')
         // TODO add dedicated DB/user account for tests to run on
