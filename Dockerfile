@@ -1,15 +1,27 @@
-FROM node:16-alpine
+FROM node:16-alpine AS cabana
 
-# Create app directory
+RUN apk update && \
+    apk add --no-cache git
+
+RUN git clone https://github.com/RetroPilot/cabana.git
+
+WORKDIR /cabana
+
+RUN yarn install && \
+    yarn netlify-sass && \
+    yarn build
+
+FROM node:16-alpine AS server
+
 WORKDIR /app
 
-# Install app dependencies
 COPY package*.json ./
 RUN npm ci
 
-# Bundle app source
 COPY . .
 RUN npm run build
+
+COPY --from=cabana /cabana/build cabana
 
 EXPOSE 3000
 CMD ["npm", "run", "server"]
