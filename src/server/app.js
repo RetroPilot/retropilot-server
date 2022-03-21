@@ -21,15 +21,14 @@ function runAsyncWrapper(callback) {
 const tasks = [];
 const app = express();
 
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', `${process.env.BASE_URL}`);
-  res.header('Access-Control-Allow-Credentials', true);
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
-  next();
-});
-
 storageController.initializeStorage();
 tasks.push(storageController.updateTotalStorageUsed());
+
+app.use(cors({
+  origin: ['http://localhost:3000', 'https://connect.retropilot.org'],
+  credentials: true,
+}));
+app.use(cookieParser());
 
 app.use(routers.api);
 app.use(routers.useradmin);
@@ -51,11 +50,9 @@ if (process.env.ATHENA_ENABLED) {
   app.use('/realtime', routers.realtime);
   // app.use(routers.oauthAuthenticator)
 } else {
-  logger.log('Athena disabled');
+  logger.info('Athena disabled');
 }
 
-app.use(cors({ origin: 'http://localhost:8080' }));
-app.use(cookieParser());
 app.use('/favicon.ico', express.static('static/favicon.ico'));
 app.use(process.env.BASE_DRIVE_DOWNLOAD_PATH_MAPPING, express.static(process.env.STORAGE_PATH));
 
