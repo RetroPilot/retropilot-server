@@ -45,11 +45,11 @@ export async function getToken(code, scope) {
     return { error: true, ...AUTH_OAUTH_ERR_GOOGLE_FAILED_TOKEN_FETCH };
   }
 
-  logger.log(`accessToken: ${accessToken}`);
+  logger.info(`accessToken: ${accessToken}`);
 
   const id = jsonwebtoken.decode(accessToken.token.id_token);
 
-  logger.log(`jsonwebtoken.${id}`);
+  logger.info(`jsonwebtoken.${id}`);
 
   return id;
 }

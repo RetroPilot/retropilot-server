@@ -6,7 +6,7 @@ import httpServer from 'http';
 import { readFileSync } from 'fs';
 import log4js from 'log4js';
 
-import models from '../../../models/index.model';
+import { AthenaActionLog, AthenaReturnedData } from '../../../models';
 import deviceController from '../../controllers/devices';
 import helperFunctions from './helpers';
 
@@ -88,7 +88,7 @@ async function manageConnection(ws, res) {
 
     console.log({ device_id: ws.device_id, uuid: json.id });
 
-    console.log(await models.models.athena_returned_data.update({
+    console.log(await AthenaReturnedData.update({
       data: JSON.stringify(json),
       resolved_at: Date.now(),
     }, { where: { device_id: ws.device_id, uuid: json.id } }));
@@ -164,7 +164,7 @@ wss.retropilotFunc = {
 
   /* eslint-disable camelcase */
   actionLogger: async (account_id, device_id, action, user_ip, device_ip, meta, dongle_id) => {
-    models.models.athena_action_log.create({
+    await AthenaActionLog.create({
       account_id, device_id, action, user_ip, device_ip, meta, created_at: Date.now(), dongle_id,
     });
   },

@@ -2,8 +2,8 @@ import sanitizeFactory from 'sanitize';
 import crypto from 'crypto';
 import dirTree from 'directory-tree';
 import log4js from 'log4js';
-import orm from '../../models/index.model';
 
+import { Devices } from '../../models';
 import { readJWT, validateJWT } from './authentication';
 import { getAccountFromId } from './users';
 
@@ -23,14 +23,14 @@ async function pairDevice(account, qrString) {
 
   if (qrString.indexOf('--') >= 0) {
     const [, serial, pairToken] = qrCodeParts;
-    device = await orm.models.device.findOne({ where: { serial } });
+    device = await Devices.findOne({ where: { serial } });
     pairJWT = pairToken;
   } else {
     const data = await readJWT(qrString);
     if (!data || !data.pair) {
       return { success: false, noPair: true };
     }
-    device = await orm.models.device.findOne({ where: { dongle_id: data.identity } });
+    device = await Devices.findOne({ where: { dongle_id: data.identity } });
     pairJWT = qrString;
   }
 
@@ -50,12 +50,12 @@ async function pairDevice(account, qrString) {
 }
 
 async function pairDeviceToAccountId(dongleId, accountId) {
-  await orm.models.device.update(
+  await Devices.update(
     { account_id: accountId },
     { where: { dongle_id: dongleId } },
   );
 
-  const check = await orm.models.device.findOne(
+  const check = await Devices.findOne(
     { where: { dongle_id: dongleId, account_id: accountId } },
   );
   if (check.dataValues) {
@@ -67,12 +67,12 @@ async function pairDeviceToAccountId(dongleId, accountId) {
 }
 
 async function unpairDevice(account, dongleId) {
-  const device = await orm.models.device.getOne(
+  const device = await Devices.getOne(
     { where: { account_id: account.id, dongle_id: dongleId } },
   );
 
   if (device && device.dataValues) {
-    await orm.models.device.update(
+    await Devices.update(
       { account_id: 0 },
       { where: { dongle_id: dongleId } },
     );
@@ -82,14 +82,14 @@ async function unpairDevice(account, dongleId) {
 }
 
 async function setDeviceNickname(account, dongleId, nickname) {
-  const device = await orm.models.device.getOne(
+  const device = await Devices.getOne(
     { where: { account_id: account.id, dongle_id: dongleId } },
   );
 
   const cleanNickname = sanitize.value(nickname, 'string');
 
   if (device && device.dataValues) {
-    await orm.models.device.update(
+    await Devices.update(
       { nickname: cleanNickname },
       { where: { dongle_id: dongleId } },
     );
@@ -99,12 +99,12 @@ async function setDeviceNickname(account, dongleId, nickname) {
 }
 
 async function getDevices(accountId) {
-  return orm.models.device.findAll({ where: { account_id: accountId } });
+  return Devices.findAll({ where: { account_id: accountId } });
 }
 
 async function getDeviceFromDongle(dongleId) {
   if (!dongleId) return null;
-  const devices = await orm.models.device.findOne({ where: { dongle_id: dongleId } });
+  const devices = await Devices.findOne({ where: { dongle_id: dongleId } });
   if (!devices || !devices.dataValues) {
     return null;
   }
@@ -113,7 +113,7 @@ async function getDeviceFromDongle(dongleId) {
 // TODO combine these redundant functions into one
 async function getDeviceFromSerial(serial) {
   if (!serial) return null;
-  const devices = await orm.models.device.findOne({ where: { serial } });
+  const devices = await Devices.findOne({ where: { serial } });
   if (!devices || !devices.dataValues) {
     return null;
   }
@@ -123,7 +123,7 @@ async function getDeviceFromSerial(serial) {
 async function updateDevice(dongleId, data) {
   if (!dongleId) return null;
 
-  return orm.models.device.update(data, { where: { dongle_id: dongleId } });
+  return Devices.update(data, { where: { dongle_id: dongleId } });
 }
 
 async function setIgnoredUploads(dongleId, isIgnored) {
@@ -137,11 +137,11 @@ async function setIgnoredUploads(dongleId, isIgnored) {
 }
 
 async function getAllDevicesFiltered() {
-  return orm.models.device.findAll();
+  return Devices.findAll();
 }
 
 async function updateLastPing(deviceId) {
-  return orm.models.device.update(
+  return Devices.update(
     { last_ping: Date.now() },
     { where: { [Op.or]: [{ id: deviceId }, { dongle_id: deviceId }] } },
   );
@@ -196,7 +196,7 @@ async function getDrives(dongleId, includeDeleted, includeMeta) {
 
 async function getDrive(identifier) {
   const drive = await orm.models.drives.findOne({ where: { identifier } });
-  logger.log(drive);
+  logger.info(drive);
 
   if (drive.dataValues) return drive.dataValues;
   return null;
@@ -274,7 +274,7 @@ async function updateOrCreateDrive(dongleId, identifier, data) {
   logger.info('updateOrCreate Drive', dongleId, identifier, data);
   const check = await orm.models.drives.findOne({ where: { dongle_id: dongleId, identifier } });
 
-  logger.log('checking for existing drive....', check);
+  logger.info('checking for existing drive....', check);
 
   if (check) {
     return orm.models.drives.update(
@@ -322,7 +322,7 @@ async function getDriveSegment(driveName, segment) {
 }
 
 async function createDongle(dongleId, accountId, imei, serial, publicKey) {
-  return orm.models.device.create({
+  return Devices.create({
     dongle_id: dongleId,
     account_id: 0,
     imei,

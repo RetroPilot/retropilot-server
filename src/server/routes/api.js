@@ -270,8 +270,8 @@ async function upload(req, res) {
         logger.warn("drive failed to make", err)
       })
 
-      logger.log("drive value", drive)
-      logger.log("drive name:", driveName)
+      logger.info("drive value", drive)
+      logger.info("drive name:", driveName)
 
       if (drive === undefined || drive === null) {
         logger.info("CREATING NEW DRIVE")

@@ -1,12 +1,11 @@
 import express from 'express';
-/* eslint-disable no-unused-vars */
-import authenticationController from '../../controllers/authentication';
 
-import userController from '../../controllers/users';
+import { AthenaReturnedData } from '../../../models';
+import authenticationController from '../../controllers/authentication';
 import deviceController from '../../controllers/devices';
-import models from '../../../models/index.model';
-/* eslint-enable no-unused-vars */
+
 const router = express.Router();
+
 const whitelistParams = {
   getmessage: true,
   getversion: true,
@@ -146,7 +145,7 @@ router.get('/dongle/:dongle_id/get', async (req, res) => {
     });
   }
 
-  return res.json(await models.models.athena_returned_data.findAll({
+  return res.json(await AthenaReturnedData.findAll({
     where: { device_id: device.id },
   }));
 });

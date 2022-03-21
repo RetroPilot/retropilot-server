@@ -24,13 +24,13 @@ async function isAuthenticated(req, res, next) {
 }
 
 router.get('/authentication/oauth/callback', async (req, res) => {
-  logger.log(req.query);
+  logger.info(req.query);
   res.json(await getToken(req.query.code, req.query.scope));
 });
 
 router.get('/authentication/oauth/:provider', async (req, res) => {
   const { provider } = req.params;
-  logger.log('provider', provider);
+  logger.info('provider', provider);
   let url;
   switch (provider) {
     case 'google':

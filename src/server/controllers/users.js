@@ -1,24 +1,25 @@
 import crypto from 'crypto';
 import log4js from 'log4js';
-import orm from '../../models/index.model';
+
+import { Accounts } from '../../models';
 
 const logger = log4js.getLogger('default');
 
 export async function getAccountFromId(id) {
-  return orm.models.accounts.findByPk(id);
+  return Accounts.findByPk(id);
 }
 
 export async function getAccountFromEmail(email) {
   if (!email) return null;
 
-  const account = orm.models.accounts.findOne({ where: { email } });
+  const account = Accounts.findOne({ where: { email } });
 
   if (account.dataValues) return account.dataValues;
   return null;
 }
 
 export async function createBaseAccount() {
-  await orm.models.accounts.create({
+  await Accounts.create({
     id: 0,
     email: 'dummy@retropilot.org',
     password: '123123',
@@ -31,8 +32,8 @@ export async function createBaseAccount() {
 }
 
 export async function _dirtyCreateAccount(email, password, created, admin) {
-  logger.log('creating acount: ', email, password, created, admin);
-  return orm.models.accounts.create({
+  logger.info('creating account: ', email, password, created, admin);
+  return Accounts.create({
     email, password, created, admin,
   });
 }
@@ -48,12 +49,12 @@ export async function createAccount(email, password) {
   const emailToken = crypto.createHmac('sha256', process.env.APP_SALT).update(email.trim()).digest('hex');
   password = crypto.createHash('sha256').update(password + process.env.APP_SALT).digest('hex');
 
-  const account = await orm.models.accounts.findOne({ where: { email } });
+  const account = await Accounts.findOne({ where: { email } });
   if (account != null && account.dataValues != null) {
     return { success: true, status: 409, data: { alreadyRegistered: true } };
   }
 
-  await orm.models.accounts.create({
+  await Accounts.create({
     email,
     password,
     created: Date.now(),
@@ -61,7 +62,7 @@ export async function createAccount(email, password) {
     email_verify_token: emailToken,
   });
 
-  const didAccountRegister = await orm.models.accounts.findOne({ where: { email } });
+  const didAccountRegister = await Accounts.findOne({ where: { email } });
 
   if (didAccountRegister != null && didAccountRegister.dataValues != null) {
     return { success: true, status: 200 };
@@ -76,7 +77,7 @@ export async function verifyEmailToken(token) {
     return { success: false, status: 400, data: { missingToken: true } };
   }
 
-  const account = await orm.models.accounts.findOne(
+  const account = await Accounts.findOne(
     { where: { email_verify_token: token } },
   );
 
@@ -87,7 +88,7 @@ export async function verifyEmailToken(token) {
     return { success: true, status: 409, data: { alreadyVerified: true } };
   }
 
-  await orm.models.accounts.update(
+  await Accounts.update(
     { verified: true },
     { where: { id: account.id } },
   );
@@ -96,7 +97,7 @@ export async function verifyEmailToken(token) {
 }
 
 export async function getAllUsers() {
-  return orm.models.accounts.findAll({ attributes: ['id', 'last_ping', 'created', 'admin', 'banned'] });
+  return Accounts.findAll({ attributes: ['id', 'last_ping', 'created', 'admin', 'banned'] });
 }
 
 export default {

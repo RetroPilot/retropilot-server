@@ -35,7 +35,7 @@ if(process.env.NODE_ENV === 'development') {
 router.post('/useradmin/auth', bodyParser.urlencoded({ extended: true }), runAsyncWrapper(async (req, res) => {
   const signIn = await authenticationController.signIn(req.body.email, req.body.password);
 
-  logger.log(signIn);
+  logger.info(signIn);
 
   if (signIn.success) {
     res.cookie('jwt', signIn.jwt);
@@ -134,14 +134,15 @@ router.post('/useradmin/register/token', bodyParser.urlencoded({ extended: true 
         Date.now(),
         false,
       );
-    } catch(error) {
-      console.error(error);
+    } catch (error) {
+      console.error('error creating account', error);
     }
 
-    logger.log(result);
+    logger.debug('created account:', result);
 
     if (result.dataValues) {
-      logger.info(`USERADMIN REGISTRATION - created new account #${result.lastID} with email ${email}`);
+      const account = result.dataValues;
+      logger.info(`USERADMIN REGISTRATION - created new account #${account.id} with email ${email}`);
       return res.redirect(`/useradmin?status=${encodeURIComponent('Successfully registered')}`);
     }
 

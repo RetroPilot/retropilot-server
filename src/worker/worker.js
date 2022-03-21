@@ -8,7 +8,7 @@ import Reader from '@commaai/log_reader';
 import ffprobe from 'ffprobe';
 import ffprobeStatic from 'ffprobe-static';
 
-import orm from '../models/index.model';
+import orm from '../models/orm';
 import {
   initializeStorage,
   deleteFolderRecursive,

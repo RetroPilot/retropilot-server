@@ -1,7 +1,8 @@
 import crypto from 'crypto';
 import jsonwebtoken from 'jsonwebtoken';
 import log4js from 'log4js';
-import orm from '../../../models/index.model';
+
+import { Accounts } from '../../../models';
 
 const logger = log4js.getLogger('default');
 
@@ -24,38 +25,44 @@ export async function readJWT(token) {
 }
 
 async function signIn(email, password) {
-  let account = await orm.models.accounts.findOne({ where: { email } });
+  let account = await Accounts.findOne({ where: { email } });
 
-  if (account && account.dataValues) {
-    account = account.dataValues;
-    const inputPassword = crypto.createHash('sha256').update(password + process.env.APP_SALT).digest('hex');
-    if (account.password === inputPassword) {
-      const token = jsonwebtoken.sign({ accountId: account.id }, process.env.APP_SALT);
-
-      return { success: true, jwt: token };
-    }
-    return { success: false, msg: 'BAD PASSWORD', invalidPassword: true };
+  if (!account || !account.dataValues) {
+    return { success: false, msg: 'BAD ACCOUNT', badAccount: true };
   }
-  return { success: false, msg: 'BAD ACCOUNT', badAccount: true };
+
+  account = account.dataValues;
+  const inputPassword = crypto.createHash('sha256').update(password + process.env.APP_SALT).digest('hex');
+  if (account.password !== inputPassword) {
+    return {
+      success: false,
+      msg: 'BAD PASSWORD',
+      invalidPassword: true,
+    };
+  }
+
+  const token = jsonwebtoken.sign({ accountId: account.id }, process.env.APP_SALT);
+  return { success: true, jwt: token };
 }
 
 async function changePassword(account, newPassword, oldPassword) {
   if (!account || !newPassword || !oldPassword) {
     return { success: false, error: 'MISSING_DATA' };
   }
+
   const oldPasswordHash = crypto.createHash('sha256').update(oldPassword + process.env.APP_SALT).digest('hex');
-
-  if (account.password === oldPasswordHash) {
-    const newPasswordHash = crypto.createHash('sha256').update(newPassword + process.env.APP_SALT).digest('hex');
-
-    await orm.models.accounts.update(
-      { password: newPasswordHash },
-      { where: { id: account.id } },
-    );
-
-    return { success: true, msg: 'PASSWORD CHANGED', changed: true };
+  if (account.password !== oldPasswordHash) {
+    return { success: false, msg: 'BAD PASSWORD', passwordCorrect: false };
   }
-  return { success: false, msg: 'BAD PASSWORD', passwordCorrect: false };
+
+  const newPasswordHash = crypto.createHash('sha256').update(newPassword + process.env.APP_SALT).digest('hex');
+
+  await Accounts.update(
+    { password: newPasswordHash },
+    { where: { id: account.id } },
+  );
+
+  return { success: true, msg: 'PASSWORD CHANGED', changed: true };
 }
 
 /*
@@ -89,13 +96,13 @@ async function getAccountFromJWT(jwt, limitData) {
     query = { ...query, attributes: { exclude: ['password', '2fa_token', 'session_seed'] } };
   }
 
-  const account = await orm.models.accounts.findOne(query);
-  if (!account.dataValues) {
+  const account = await Accounts.findOne(query);
+  if (!account || !account.dataValues) {
     return null; // {success: false, isInvalid: true}
   }
 
   try {
-    await orm.models.accounts.update(
+    await Accounts.update(
       { last_ping: Date.now() },
       { where: { id: account.id } },
     );

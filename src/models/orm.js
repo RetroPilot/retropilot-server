@@ -1,6 +1,3 @@
-/* eslint-disable no-restricted-syntax */
-/* eslint-disable global-require */
-
 import { Sequelize } from 'sequelize';
 
 const sequelize = new Sequelize({
@@ -13,21 +10,6 @@ const sequelize = new Sequelize({
 });
 
 sequelize.options.logging = () => {};
-
-const modelDefiners = [
-  require('./devices.model').default,
-  require('./drives.model').default,
-  require('./accounts.model').default,
-  require('./athena_action_log.model').default,
-  require('./athena_returned_data.model').default,
-  require('./device_authorised_users.model').default,
-  require('./drive_segments.model').default,
-  require('./oauth_accounts.model').default,
-];
-
-for (const modelDefiner of modelDefiners) {
-  modelDefiner(sequelize);
-}
 
 /**
  * Synchronise the database (create new tables) to match the models defined

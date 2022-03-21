@@ -1,11 +1,7 @@
-import orm from '../../models/index.model';
-
 // TODO move everythijng away from this dumb intertwined style
 
-// eslint-disable-next-line no-unused-vars
-import devices from './devices';
-
 import authentication from './authentication';
+import { Accounts } from '../../models';
 
 async function isCurrentUserAdmin(hardFail, req) {
   const account = await authentication.getAuthenticatedAccount(req);
@@ -29,12 +25,12 @@ async function banAccount(ban, userId) {
     return { success: false, status: 400, data: { bad_data: true } };
   }
 
-  await orm.models.accounts.update(
+  await Accounts.update(
     { banned: cleanBan ? 1 : 0 },
     { where: { id: userId } },
   );
 
-  const verify = await orm.models.accounts.findOne({ where: { id: userId } });
+  const verify = await Accounts.findOne({ where: { id: userId } });
   if (verify.dataValues && verify.dataValues.banned === cleanBan ? 1 : 0) {
     return { success: true, status: 200, data: { banned: ban } };
   }

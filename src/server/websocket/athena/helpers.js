@@ -1,6 +1,7 @@
 /* eslint-disable no-underscore-dangle */
 import { v4 as uuid } from 'uuid';
-import orm from '../../../models/index.model';
+
+import { AthenaReturnedData } from '../../../models';
 
 let realtime;
 let wss;
@@ -31,7 +32,7 @@ function invoke(command, params, dongleId, accountId, id) {
 
   wss.retropilotFunc.actionLogger(accountId, websocket.device_id, 'ATHENA_USER_INVOKE__ISSUED', null, websocket._socket.remoteAddress, JSON.stringify({ command, params, uniqueID }), websocket.dongleId);
 
-  orm.models.athena_returned_data.create({
+  AthenaReturnedData.create({
     device_id: websocket.device_id,
     type: command,
     created_at: Date.now(),
@@ -47,7 +48,9 @@ function isDeviceConnected(accountId, deviceId, dongleId) {
   const websocket = wss.retropilotFunc.findFromDongle(dongleId);
   wss.retropilotFunc.actionLogger(accountId, deviceId, 'ATHENA_USER_STATUS__IS_CONNECTED', null, websocket ? websocket._socket.remoteAddress : null, JSON.stringify({ connected: !!websocket, heartbeat: websocket ? websocket.heartbeat : null }), dongleId);
 
-  if (!websocket) return { connected: false };
+  if (!websocket) {
+    return { connected: false };
+  }
 
   return { connected: true, heartbeat: websocket.heartbeat };
 }

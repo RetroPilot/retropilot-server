@@ -54,7 +54,7 @@ router.put('/retropilot/0/device/:dongle_id/', [isAuthenticated, bodyParser.json
   }
 
   const { body } = req;
-  logger.log(MutateDevice.isValid(body));
+  logger.info(MutateDevice.isValid(body));
   // TODO: response?
   return res.json({ success: true });
 });
