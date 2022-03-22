@@ -19,6 +19,8 @@ function runAsyncWrapper(callback) {
   };
 }
 
+// TODO(cameron): clean up this mess into separate files
+
 
 // DRIVE & BOOT/CRASH LOG FILE UPLOAD HANDLING
 router.put('/backend/post_upload', bodyParser.raw({
@@ -266,7 +268,7 @@ async function upload(req, res) {
       responseUrl = `${process.env.BASE_UPLOAD_URL}?file=${filename}&dir=${directory}&dongleId=${dongleId}&ts=${ts}&token=${token}`;
       logger.info(`HTTP.UPLOAD_URL matched 'drive' file upload, constructed responseUrl: ${responseUrl}`);
 
-      const drive = await deviceController.getDriveFromidentifier(dongleId, driveName).catch((err)=>{
+      const drive = await deviceController.getDriveFromIdentifier(dongleId, driveName).catch((err)=>{
         logger.warn("drive failed to make", err)
       })
 

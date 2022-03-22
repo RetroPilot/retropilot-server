@@ -7,7 +7,7 @@ import log4js from 'log4js';
 import storageController from './controllers/storage';
 import athena from './websocket/athena';
 import controllers from './controllers';
-import routers from './routes';
+import routers from './router';
 
 const logger = log4js.getLogger('default');
 
@@ -30,9 +30,8 @@ app.use(cors({
 }));
 app.use(cookieParser());
 
-app.use(routers.api);
-app.use(routers.useradmin);
-app.use(routers.authenticationApi);
+app.use('/api', routers.api);
+app.use('/useradmin', routers.useradmin);
 
 if (process.env.ATHENA_ENABLED) {
   const athenaRateLimit = rateLimit({
@@ -55,8 +54,6 @@ if (process.env.ATHENA_ENABLED) {
 
 app.use('/favicon.ico', express.static('static/favicon.ico'));
 app.use(process.env.BASE_DRIVE_DOWNLOAD_PATH_MAPPING, express.static(process.env.STORAGE_PATH));
-
-app.use(routers.deviceApi);
 
 app.use('/.well-known', express.static('.well-known'));
 

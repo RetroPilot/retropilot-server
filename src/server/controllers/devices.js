@@ -1,9 +1,15 @@
-import sanitizeFactory from 'sanitize';
 import crypto from 'crypto';
 import dirTree from 'directory-tree';
 import log4js from 'log4js';
+import sanitizeFactory from 'sanitize';
+import { Op } from 'sequelize';
 
-import { Devices } from '../../models';
+import {
+  Accounts,
+  Devices,
+  Drives,
+  DriveSegments,
+} from '../../models';
 import { readJWT, validateJWT } from './authentication';
 import { getAccountFromId } from './users';
 
@@ -127,7 +133,7 @@ async function updateDevice(dongleId, data) {
 }
 
 async function setIgnoredUploads(dongleId, isIgnored) {
-  await orm.models.accounts.update(
+  await Accounts.update(
     { dongle_id: dongleId },
     { where: { uploads_ignored: isIgnored } },
   );
@@ -191,19 +197,19 @@ async function getDrives(dongleId, includeDeleted, includeMeta) {
     query = { ...query, attributes: { exclude: ['metadata'] } };
   }
 
-  return orm.models.drives.findAll(query);
+  return Drives.findAll(query);
 }
 
 async function getDrive(identifier) {
-  const drive = await orm.models.drives.findOne({ where: { identifier } });
-  logger.info(drive);
-
-  if (drive.dataValues) return drive.dataValues;
-  return null;
+  const drive = await Drives.findOne({ where: { identifier } });
+  if (!drive) {
+    return null;
+  }
+  return drive.dataValues;
 }
 
-async function getDriveFromidentifier(dongleId, identifier) {
-  return orm.models.drives.findOne({ where: { dongle_id: dongleId, identifier } });
+async function getDriveFromIdentifier(dongleId, identifier) {
+  return Drives.findOne({ where: { dongle_id: dongleId, identifier } });
 }
 
 /*
@@ -272,18 +278,15 @@ async function getBootlogs(dongleId) {
 
 async function updateOrCreateDrive(dongleId, identifier, data) {
   logger.info('updateOrCreate Drive', dongleId, identifier, data);
-  const check = await orm.models.drives.findOne({ where: { dongle_id: dongleId, identifier } });
+  const check = await Drives.findOne({ where: { dongle_id: dongleId, identifier } });
 
   logger.info('checking for existing drive....', check);
 
   if (check) {
-    return orm.models.drives.update(
-      data,
-      { where: { dongle_id: dongleId, identifier } },
-    );
+    return Drives.update(data, { where: { dongle_id: dongleId, identifier } });
   }
 
-  return orm.models.drives.create({
+  return Drives.create({
     ...data,
     dongle_id: dongleId,
     identifier,
@@ -292,18 +295,18 @@ async function updateOrCreateDrive(dongleId, identifier, data) {
 
 async function updateOrCreateDriveSegment(dongleId, identifier, segmentId, data) {
   logger.info('updateOrCreate Drive_Segment', dongleId, identifier, data);
-  const check = await orm.models.drive_segments.findOne({
+  const check = await DriveSegments.findOne({
     where: { segment_id: segmentId, dongle_id: dongleId, drive_identifier: identifier },
   });
 
   if (check) {
-    return orm.models.drive_segments.update(
+    return DriveSegments.update(
       data,
       { where: { segment_id: segmentId, dongle_id: dongleId, drive_identifier: identifier } },
     );
   }
 
-  return orm.models.drive_segments.create({
+  return DriveSegments.create({
     ...data,
     segment_id: segmentId,
     drive_identifier: identifier,
@@ -312,8 +315,7 @@ async function updateOrCreateDriveSegment(dongleId, identifier, segmentId, data)
 }
 
 async function getDriveSegment(driveName, segment) {
-  return orm.models.drive_segments.findOne({
-
+  return DriveSegments.findOne({
     where: {
       segment_id: segment,
       drive_identifier: driveName,
@@ -356,7 +358,7 @@ export default {
   getDrive,
   getBootlogs,
   getCrashlogs,
-  getDriveFromidentifier,
+  getDriveFromIdentifier,
   updateOrCreateDrive,
   updateOrCreateDriveSegment,
   getDriveSegment,

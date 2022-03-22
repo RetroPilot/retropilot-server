@@ -28,17 +28,13 @@ async function signIn(email, password) {
   let account = await Accounts.findOne({ where: { email } });
 
   if (!account || !account.dataValues) {
-    return { success: false, msg: 'BAD ACCOUNT', badAccount: true };
+    return { success: false, msg: 'BAD ACCOUNT' };
   }
 
   account = account.dataValues;
   const inputPassword = crypto.createHash('sha256').update(password + process.env.APP_SALT).digest('hex');
   if (account.password !== inputPassword) {
-    return {
-      success: false,
-      msg: 'BAD PASSWORD',
-      invalidPassword: true,
-    };
+    return { success: false, msg: 'BAD PASSWORD' };
   }
 
   const token = jsonwebtoken.sign({ accountId: account.id }, process.env.APP_SALT);
@@ -78,7 +74,7 @@ async function getAuthenticatedAccount(req) {
   return getAccountFromJWT(sessionJWT);
 }
 
-async function getAccountFromJWT(jwt, limitData) {
+async function getAccountFromJWT(jwt, limitData = true) {
   let token;
 
   try {
@@ -93,7 +89,11 @@ async function getAccountFromJWT(jwt, limitData) {
 
   let query = { where: { id: token.accountId } };
   if (limitData) {
-    query = { ...query, attributes: { exclude: ['password', '2fa_token', 'session_seed'] } };
+    // we don't want to include sensitive info in the response
+    query = {
+      ...query,
+      attributes: { exclude: ['password', '2fa_token', 'session_seed'] },
+    };
   }
 
   const account = await Accounts.findOne(query);

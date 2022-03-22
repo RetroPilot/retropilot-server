@@ -3,7 +3,9 @@ import express from 'express';
 import { AthenaReturnedData } from '../../../models';
 import authenticationController from '../../controllers/authentication';
 import deviceController from '../../controllers/devices';
+import { isAuthenticated } from '../../middlewares/authentication';
 
+// /api/realtime
 const router = express.Router();
 
 const whitelistParams = {
@@ -24,17 +26,11 @@ const whitelistParams = {
   takesnapshot: true,
 };
 
-router.get('/dongle/:dongle_id/connected', async (req, res) => {
-  const account = await authenticationController.getAuthenticatedAccount(req);
-  if (account == null) {
-    return res.status(403).json({
-      error: true,
-      errorMsg: 'Unauthenticated',
-      errorObject: { authenticated: false },
-    });
-  }
+// TODO: use middleware to get device from dongle id
 
-  const { dongle_id: dongleId } = req.params;
+router.get('/:dongleId/connected', isAuthenticated, async (req, res) => {
+  const { account, params: { dongleId } } = req;
+
   const device = await deviceController.getDeviceFromDongle(dongleId);
   if (!device) {
     return res.status(400).json({
@@ -64,8 +60,10 @@ router.get('/dongle/:dongle_id/connected', async (req, res) => {
   });
 });
 
-router.get('/dongle/:dongle_id/send/:method/', async (req, res) => {
-  const { method } = req.params;
+// TODO: change to POST request
+router.get('/:dongleId/send/:method/', isAuthenticated, async (req, res) => {
+  const { account, params: { dongleId, method } } = req;
+
   if (!whitelistParams[method.toLowerCase()]) {
     return res.status(409).json({
       error: true,
@@ -74,16 +72,6 @@ router.get('/dongle/:dongle_id/send/:method/', async (req, res) => {
     });
   }
 
-  const account = await authenticationController.getAuthenticatedAccount(req);
-  if (account == null) {
-    return res.status(403).json({
-      error: true,
-      errorMsg: 'Unauthenticated',
-      errorObject: { authenticated: false },
-    });
-  }
-
-  const { dongle_id: dongleId } = req.params;
   const device = await deviceController.getDeviceFromDongle(dongleId);
   if (!device) {
     return res.status(400).json({
@@ -113,7 +101,7 @@ router.get('/dongle/:dongle_id/send/:method/', async (req, res) => {
   });
 });
 
-router.get('/dongle/:dongle_id/get', async (req, res) => {
+router.get('/:dongle_id/get', async (req, res) => {
   const account = await authenticationController.getAuthenticatedAccount(req);
   if (account == null) {
     return res.status(403).json({
@@ -150,7 +138,8 @@ router.get('/dongle/:dongle_id/get', async (req, res) => {
   }));
 });
 
-router.get('/dongle/:dongle_id/temp/nav/:lat/:long', async (req, res) => {
+// TODO: change to POST request
+router.get('/:dongle_id/temp/nav/:lat/:long', async (req, res) => {
   if (!req.params.lat || !req.params.long) {
     return res.status(403).json({ error: true, errorMsg: 'Malformed_Request', errorObject: { malformed: true } });
   }

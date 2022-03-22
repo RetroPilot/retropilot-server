@@ -6,7 +6,7 @@ import useradminapi from './userAdminApi';
 import admin from './administration/adminApi';
 import realtime from './api/realtime';
 import deviceApi from './api/devices';
-import authenticationApi from './api/authentication';
+import authenticationApi from './api/auth';
 import oauthAuthenticator from './api/authentication/oauth';
 
 export default {

@@ -2,26 +2,10 @@ import express from 'express';
 import log4js from 'log4js';
 
 import { getURL, getToken } from '../../../controllers/authentication/oauth/google';
-import authenticationController from '../../../controllers/authentication';
+import { isAuthenticated } from '../../../middlewares/authentication';
 
 const router = express.Router();
 const logger = log4js.getLogger('default');
-
-async function isAuthenticated(req, res, next) {
-  const account = await authenticationController.getAuthenticatedAccount(req);
-
-  if (account === null) {
-    res.json({
-      success: true,
-      data: {
-        authenticated: false,
-      },
-    });
-  } else {
-    req.account = account;
-    next();
-  }
-}
 
 router.get('/authentication/oauth/callback', async (req, res) => {
   logger.info(req.query);

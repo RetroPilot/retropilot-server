@@ -4,30 +4,16 @@ import dirTree from 'directory-tree';
 import express from 'express';
 import log4js from 'log4js';
 
-import authenticationController from '../../controllers/authentication';
+import { isAuthenticated } from '../../middlewares/authentication';
 import deviceController from '../../controllers/devices';
 import { MutateDevice } from '../../schema/routes/devices';
 
 const logger = log4js.getLogger('default');
 
+// /api/devices
 const router = express.Router();
 
-async function isAuthenticated(req, res, next) {
-  const account = await authenticationController.getAuthenticatedAccount(req);
-
-  if (account === null) {
-    res.json({ success: false, msg: 'NOT_AUTHENTICATED1' });
-  } else {
-    req.account = account;
-    next();
-  }
-}
-
-router.get('/retropilot/0/devices', isAuthenticated, async (req, res) => {
-  if (!req.account) {
-    return res.json({ success: false, msg: 'NOT_AUTHENTICATED' });
-  }
-
+router.get('/', isAuthenticated, async (req, res) => {
   const dongles = await deviceController.getDevices(req.account.id);
 
   return res.json({ success: true, data: dongles });
@@ -48,26 +34,19 @@ router.get('/retropilot/0/devices', isAuthenticated, async (req, res) => {
 }
 */
 
-router.put('/retropilot/0/device/:dongle_id/', [isAuthenticated, bodyParser.json()], async (req, res) => {
-  if (!req.account) {
-    return res.json({ success: false, msg: 'NOT_AUTHENTICATED' });
-  }
-
+router.put('/:dongle_id/', [isAuthenticated, bodyParser.json()], async (req, res) => {
   const { body } = req;
   logger.info(MutateDevice.isValid(body));
   // TODO: response?
   return res.json({ success: true });
 });
 
-router.get('/retropilot/0/device/:dongle_id/drives/:drive_identifier/segment', isAuthenticated, async (req, res) => {
-  if (!req.account) {
-    return res.json({ success: false, msg: 'NOT_AUTHENTICATED' });
-  }
+router.get('/:dongle_id/drives/:drive_identifier/segment', isAuthenticated, async (req, res) => {
   const dongleId = req.params.dongle_id;
   const accountId = req.account.id;
   const isUserAuthorised = await deviceController.isUserAuthorised(dongleId, accountId);
 
-  // TODO reduce data returned`
+  // TODO reduce data returned
   if (isUserAuthorised.success === false || isUserAuthorised.data.authorised === false) {
     return res.json({ success: false, msg: isUserAuthorised.msg });
   }
@@ -79,15 +58,12 @@ router.get('/retropilot/0/device/:dongle_id/drives/:drive_identifier/segment', i
   return res.json({ success: true, msg: 'ok', data: directoryTree });
 });
 
-router.get('/retropilot/0/device/:dongle_id/drives/:deleted', isAuthenticated, async (req, res) => {
-  if (!req.account) {
-    return res.json({ success: false, msg: 'NOT_AUTHENTICATED' });
-  }
+router.get('/:dongle_id/drives/:deleted', isAuthenticated, async (req, res) => {
   const dongleId = req.params.dongle_id;
   const accountId = req.account.id;
   const isUserAuthorised = await deviceController.isUserAuthorised(dongleId, accountId);
 
-  // TODO reduce data returned`
+  // TODO reduce data returned
   if (isUserAuthorised.success === false || isUserAuthorised.data.authorised === false) {
     return res.json({ success: false, msg: isUserAuthorised.msg });
   }
@@ -97,14 +73,11 @@ router.get('/retropilot/0/device/:dongle_id/drives/:deleted', isAuthenticated, a
   return res.json({ success: true, data: dongles });
 });
 
-router.get('/retropilot/0/device/:dongle_id/bootlogs', isAuthenticated, async (req, res) => {
-  if (!req.account) {
-    return res.json({ success: false, msg: 'NOT_AUTHENTICATED' });
-  }
+router.get('/:dongle_id/bootlogs', isAuthenticated, async (req, res) => {
   const dongleId = req.params.dongle_id;
   const accountId = req.account.id;
   const isUserAuthorised = await deviceController.isUserAuthorised(dongleId, accountId);
-  // TODO reduce data returned`
+  // TODO reduce data returned
   if (isUserAuthorised.success === false || isUserAuthorised.data.authorised === false) {
     return res.json({ success: false, msg: isUserAuthorised.msg });
   }
@@ -114,14 +87,11 @@ router.get('/retropilot/0/device/:dongle_id/bootlogs', isAuthenticated, async (r
   return res.json({ success: true, data: bootlogs });
 });
 
-router.get('/retropilot/0/device/:dongle_id/crashlogs', isAuthenticated, async (req, res) => {
-  if (!req.account) {
-    return res.json({ success: false, msg: 'NOT_AUTHENTICATED' });
-  }
+router.get('/:dongle_id/crashlogs', isAuthenticated, async (req, res) => {
   const dongleId = req.params.dongle_id;
   const accountId = req.account.id;
   const isUserAuthorised = await deviceController.isUserAuthorised(dongleId, accountId);
-  // TODO reduce data returned`
+  // TODO reduce data returned
   if (isUserAuthorised.success === false || isUserAuthorised.data.authorised === false) {
     return res.json({ success: false, msg: isUserAuthorised.msg });
   }

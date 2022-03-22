@@ -26,7 +26,7 @@ function runAsyncWrapper(callback) {
   };
 }
 
-if(process.env.NODE_ENV === 'development') {
+if (process.env.NODE_ENV === 'development') {
   router.get('/useradmin/createbaseaccount', runAsyncWrapper(async (req, res) => {
     res.send(await userController.createBaseAccount());
   }));
@@ -609,8 +609,8 @@ router.get('/useradmin/drive/:dongleId/:driveIdentifier', runAsyncWrapper(async 
         if (directoryTree.children[i].children[c].name == 'rlog.bz2') rlog = '' + driveUrl + segment + '<a target="_blank" href="/">' + directoryTree.children[i].children[c].name + '' + directoryTree.children[i].children[c].name + '</a>';
     }
 
-    var isProcessed = '?';
-    var isStalled = '?';
+    let isProcessed = '?';
+    let isStalled = '?';
 
     const drive_segment = await models.__db.get('SELECT * FROM drive_segments WHERE segment_id = ? AND drive_identifier = ? AND dongle_id = ?', parseInt(segment), drive.identifier, device.dongle_id);
 
