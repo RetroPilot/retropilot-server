@@ -4,7 +4,7 @@ import { isAuthenticated } from '../../../middlewares/authentication';
 
 const router = express.Router();
 
-router.get('/authentication/twofactor/enrol', isAuthenticated, async (req, res) => {
+router.get('/authentication/twofactor/enrol', isAuthenticated, async () => {
   // TODO: implementation
 });
 

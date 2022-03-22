@@ -1,5 +1,5 @@
 import jsonwebtoken from 'jsonwebtoken';
-import { ClientCredentials, ResourceOwnerPassword, AuthorizationCode } from 'simple-oauth2';
+import { AuthorizationCode } from 'simple-oauth2';
 import log4js from 'log4js';
 import { AUTH_OAUTH_ERR_GOOGLE, AUTH_OAUTH_ERR_GOOGLE_FAILED_TOKEN_FETCH } from '../../../consistency/terms';
 

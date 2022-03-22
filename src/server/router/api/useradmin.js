@@ -20,8 +20,6 @@ function runAsyncWrapper(callback) {
   };
 }
 
-let models;
-
 // FIXME: already provided in auth.js
 router.post('/auth', bodyParser.urlencoded({ extended: true }), runAsyncWrapper(async (req, res) => {
   const signIn = await controllers.authentication.signIn(req.body.email, req.body.password);
