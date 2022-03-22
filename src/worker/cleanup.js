@@ -2,18 +2,19 @@ import crypto from 'crypto';
 import dirTree from 'directory-tree';
 import fs from 'fs';
 import log4js from 'log4js';
+import { Op } from 'sequelize';
 
-import { Drives } from '../models';
-import orm from '../models/orm';
+import { Devices, Drives, DriveSegments } from '../models';
 import { deleteFolderRecursive } from './storage';
 
 const logger = log4js.getLogger('cleanup');
 
-export let affectedDevices = {};
+export const affectedDevices = {};
 
 async function deleteBootAndCrashLogs() {
-  const [devices] = await orm.query('SELECT * FROM devices');
-  if (devices == null) {
+  const devices = await Devices.findAll();
+  if (!devices) {
+    logger.warn('deleteBootAndCrashLogs No devices found');
     return;
   }
 
@@ -23,7 +24,7 @@ async function deleteBootAndCrashLogs() {
       .update(device.dongle_id)
       .digest('hex');
 
-    const bootlogDirectoryTree = dirTree(`${process.env.STORAGE_PATH + device.dongle_id}/${dongleIdHash}/boot/`, { attributes: ['size'] });
+    const bootlogDirectoryTree = dirTree(`${process.env.STORAGE_PATH}${device.dongle_id}/${dongleIdHash}/boot/`, { attributes: ['size'] });
     const bootlogFiles = [];
     if (bootlogDirectoryTree) {
       for (let i = 0; i < bootlogDirectoryTree.children.length; i++) {
@@ -51,7 +52,7 @@ async function deleteBootAndCrashLogs() {
       }
     }
 
-    const crashlogDirectoryTree = dirTree(`${process.env.STORAGE_PATH + device.dongle_id}/${dongleIdHash}/crash/`, { attributes: ['size'] });
+    const crashlogDirectoryTree = dirTree(`${process.env.STORAGE_PATH}${device.dongle_id}/${dongleIdHash}/crash/`, { attributes: ['size'] });
     const crashlogFiles = [];
     if (crashlogDirectoryTree) {
       for (let i = 0; i < crashlogDirectoryTree.children.length; i++) {
@@ -83,79 +84,122 @@ async function deleteBootAndCrashLogs() {
 
 async function deleteExpiredDrives() {
   const expirationTs = Date.now() - process.env.DEVICE_EXPIRATION_DAYS * 24 * 3600 * 1000;
-
-  const [expiredDrives] = await orm.query(`SELECT * FROM drives WHERE is_preserved = false AND is_deleted = false AND created < ${expirationTs}`);
+  const expiredDrives = Drives.findAll({
+    where: {
+      is_preserved: false,
+      is_deleted: false,
+      created: { [Op.lt]: expirationTs },
+    },
+  });
   if (!expiredDrives) {
+    logger.info('deleteExpiredDrives No expired drives found');
     return;
   }
 
   for (let t = 0; t < expiredDrives.length; t++) {
     logger.info(`deleteExpiredDrives drive ${expiredDrives[t].dongle_id} ${expiredDrives[t].identifier} is older than ${process.env.DEVICE_EXPIRATION_DAYS} days, set is_deleted=true`);
     await Drives.update(
-      {
-        is_deleted: true,
-      },
+      { is_deleted: true },
       { where: { id: expiredDrives[t].id } },
     );
   }
 }
 
 async function deleteOverQuotaDrives() {
-  const [devices] = await orm.query(`SELECT * FROM devices WHERE storage_used > ${process.env.DEVICE_STORAGE_QUOTA_MB}`);
-  if (devices == null) {
+  const devices = await Devices.findAll({
+    where: {
+      storage_used: { [Op.gt]: process.env.DEVICE_STORAGE_QUOTA_MB },
+    },
+  });
+  if (devices === null) {
+    logger.info('deleteOverQuotaDrives No over quota devices found');
     return;
   }
 
   for (let t = 0; t < devices.length; t++) {
-    let foundDriveToDelete = false;
+    const { dongle_id: dongleId } = devices[t];
+    const drive = await Drives.findOne({
+      where: {
+        dongle_id: dongleId,
+        is_deleted: false,
+        is_preserved: false,
+        order: [['created', 'ASC']],
+      },
+    });
 
-    const [driveNormal] = await orm.query(`SELECT * FROM drives WHERE dongle_id = ${devices[t].dongle_id} AND is_preserved = false AND is_deleted = false ORDER BY created ASC LIMIT 1`);
-    if (driveNormal != null) {
-      logger.info(`deleteOverQuotaDrives drive ${driveNormal.dongle_id} ${driveNormal.identifier} (normal) is deleted for over-quota`);
-      await orm.query(`UPDATE drives SET is_deleted = true WHERE id = ${driveNormal.id}`);
-      foundDriveToDelete = true;
-    }
-
-    if (!foundDriveToDelete) {
-      const [drivePreserved] = await orm.query('SELECT * FROM drives WHERE dongle_id = devices[t].dongle_id AND is_preserved = true AND is_deleted = false ORDER BY created ASC LIMIT 1');
-      if (drivePreserved != null) {
-        logger.info(`deleteOverQuotaDrives drive ${drivePreserved.dongle_id} ${drivePreserved.identifier} (preserved!) is deleted for over-quota`);
-        await orm.query(`UPDATE drives SET is_deleted = ? WHERE id = ${drivePreserved.id}`);
-        foundDriveToDelete = true;
+    if (drive) {
+      logger.info(`deleteOverQuotaDrives drive ${drive.dongle_id} ${drive.identifier} (normal) is deleted for over-quota`);
+      await Drives.update(
+        { is_deleted: true },
+        { where: { id: drive.id } },
+      );
+    } else {
+      const preservedDrive = await Drives.findOne({
+        where: {
+          dongle_id: dongleId,
+          is_preserved: true,
+          is_deleted: false,
+        },
+        order: [['created', 'ASC']],
+      });
+      if (preservedDrive) {
+        logger.info(`deleteOverQuotaDrives drive ${preservedDrive.dongle_id} ${preservedDrive.identifier} (preserved!) is deleted for over-quota`);
+        await Drives.update(
+          { is_deleted: true },
+          { where: { id: preservedDrive.id } },
+        );
       }
     }
   }
 }
 
 async function removeDeletedDrivesPhysically() {
-  const [deletedDrives] = await orm.query('SELECT * FROM drives WHERE is_deleted = true AND is_physically_removed = false');
+  const deletedDrives = await Drives.findAll({
+    where: {
+      is_deleted: true,
+      is_physically_removed: false,
+    },
+  });
   if (!deletedDrives) {
+    logger.info('removeDeletedDrivesPhysically no deleted drives found');
     return;
   }
 
   for (let t = 0; t < deletedDrives.length; t++) {
-    logger.info(`removeDeletedDrivesPhysically drive ${deletedDrives[t].dongle_id} ${deletedDrives[t].identifier} is deleted, remove physical files and clean database`);
+    const drive = deletedDrives[t];
+    const {
+      id,
+      dongle_id: dongleId,
+      identifier,
+    } = drive;
+    logger.info(`removeDeletedDrivesPhysically drive ${dongleId} ${identifier} is deleted, remove physical files and clean database`);
 
     const dongleIdHash = crypto.createHmac('sha256', process.env.APP_SALT)
-      .update(deletedDrives[t].dongle_id)
+      .update(dongleId)
       .digest('hex');
     const driveIdentifierHash = crypto.createHmac('sha256', process.env.APP_SALT)
-      .update(deletedDrives[t].identifier)
+      .update(identifier)
       .digest('hex');
 
-    const drivePath = `${process.env.STORAGE_PATH + deletedDrives[t].dongle_id}/${dongleIdHash}/${driveIdentifierHash}`;
-    logger.info(`removeDeletedDrivesPhysically drive ${deletedDrives[t].dongle_id} ${deletedDrives[t].identifier} storage path is ${drivePath}`);
+    const drivePath = `${process.env.STORAGE_PATH}${dongleId}/${dongleIdHash}/${driveIdentifierHash}`;
+    logger.info(`removeDeletedDrivesPhysically drive ${dongleId} ${identifier} storage path is ${drivePath}`);
     try {
-      const driveResult = await orm.query(`UPDATE drives SET is_physically_removed = true WHERE id = ${deletedDrives[t].id}`);
+      const driveResult = await Drives.update({
+        is_physically_removed: true,
+      }, {
+        where: { id },
+      });
 
-      const driveSegmentResult = await orm.query(
-        `DELETE FROM drive_segments WHERE drive_identifier = ${deletedDrives[t].identifier} AND dongle_id = ${deletedDrives[t].dongle_id}`,
-      );
+      const driveSegmentResult = await DriveSegments.update({
+        is_physically_removed: true,
+      }, {
+        where: { drive_identifier: identifier, dongle_id: dongleId },
+      });
 
-      if (driveResult != null && driveSegmentResult != null) {
+      if (driveResult && driveSegmentResult) {
         deleteFolderRecursive(drivePath, { recursive: true });
       }
-      affectedDevices[deletedDrives[t].dongle_id] = true;
+      affectedDevices[drive.dongle_id] = true;
     } catch (exception) {
       logger.error(exception);
     }
