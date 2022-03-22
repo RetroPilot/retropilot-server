@@ -93,7 +93,7 @@ function moveUploadedFile(buffer, directory, filename) {
 
   const finalPath = mkDirByPathSync(process.env.STORAGE_PATH + directory, { isRelativeToScript: (process.env.STORAGE_PATH.indexOf('/') !== 0) });
   if (!finalPath || finalPath.length === 0) {
-    logger.error(`moveUploadedFile invalid final path, check permissions to create / write '${process.env.STORAGE_PATH + directory}'`);
+    logger.error(`moveUploadedFile invalid final path, check permissions to create / write '${process.env.STORAGE_PATH}${directory}'`);
     return false;
   }
 

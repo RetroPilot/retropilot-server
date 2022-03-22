@@ -14,9 +14,10 @@ const logger = log4js.getLogger();
 const router = express.Router();
 
 router.get('/', isAuthenticated, async (req, res) => {
-  const dongles = await deviceController.getDevices(req.account.id);
+  const { account: { id } } = req;
+  const devices = await deviceController.getDevices(id);
 
-  return res.json({ success: true, data: dongles });
+  return res.json({ success: true, data: devices });
 });
 
 /*
@@ -34,32 +35,41 @@ router.get('/', isAuthenticated, async (req, res) => {
 }
 */
 
-router.put('/:dongle_id/', [isAuthenticated, bodyParser.json()], async (req, res) => {
+router.put('/:dongleId', [isAuthenticated, bodyParser.json()], async (req, res) => {
   const { body } = req;
   logger.info(MutateDevice.isValid(body));
   // TODO: response?
   return res.json({ success: true });
 });
 
-router.get('/:dongle_id/drives/:drive_identifier/segment', isAuthenticated, async (req, res) => {
-  const dongleId = req.params.dongle_id;
-  const accountId = req.account.id;
+router.get('/:dongleId/drives/:driveIdentifier/segment', isAuthenticated, async (req, res) => {
+  const {
+    account: { id: accountId },
+    params: {
+      dongleId,
+      driveIdentifier,
+    },
+  } = req;
   const isUserAuthorised = await deviceController.isUserAuthorised(dongleId, accountId);
 
   // TODO reduce data returned
   if (isUserAuthorised.success === false || isUserAuthorised.data.authorised === false) {
     return res.json({ success: false, msg: isUserAuthorised.msg });
   }
-  const dongleIdHash = crypto.createHmac('sha256', process.env.APP_SALT).update(req.params.dongle_id).digest('hex');
-  const driveIdentifierHash = crypto.createHmac('sha256', process.env.APP_SALT).update(req.params.drive_identifier).digest('hex');
+  const dongleIdHash = crypto.createHmac('sha256', process.env.APP_SALT)
+    .update(dongleId)
+    .digest('hex');
+  const driveIdentifierHash = crypto.createHmac('sha256', process.env.APP_SALT)
+    .update(driveIdentifier)
+    .digest('hex');
 
-  const directoryTree = dirTree(`${process.env.STORAGE_PATH + req.params.dongle_id}/${dongleIdHash}/${driveIdentifierHash}/${req.params.drive_identifier}`);
-
+  const directoryTree = dirTree(`${process.env.STORAGE_PATH}${dongleId}/${dongleIdHash}/${driveIdentifierHash}/${driveIdentifier}`);
   return res.json({ success: true, msg: 'ok', data: directoryTree });
 });
 
-router.get('/:dongle_id/drives/:deleted', isAuthenticated, async (req, res) => {
-  const dongleId = req.params.dongle_id;
+router.get('/:dongleId/drives', isAuthenticated, async (req, res) => {
+  const { dongleId } = req.params;
+  const { deleted } = req.query;
   const accountId = req.account.id;
   const isUserAuthorised = await deviceController.isUserAuthorised(dongleId, accountId);
 
@@ -68,13 +78,12 @@ router.get('/:dongle_id/drives/:deleted', isAuthenticated, async (req, res) => {
     return res.json({ success: false, msg: isUserAuthorised.msg });
   }
 
-  const dongles = await deviceController.getDrives(req.params.dongle_id, req.params.deleted === 'true', true);
-
-  return res.json({ success: true, data: dongles });
+  const drives = await deviceController.getDrives(dongleId, deleted === 'true', true);
+  return res.json({ success: true, data: drives });
 });
 
-router.get('/:dongle_id/bootlogs', isAuthenticated, async (req, res) => {
-  const dongleId = req.params.dongle_id;
+router.get('/:dongleId/bootlogs', isAuthenticated, async (req, res) => {
+  const { dongleId } = req.params;
   const accountId = req.account.id;
   const isUserAuthorised = await deviceController.isUserAuthorised(dongleId, accountId);
   // TODO reduce data returned
@@ -82,13 +91,12 @@ router.get('/:dongle_id/bootlogs', isAuthenticated, async (req, res) => {
     return res.json({ success: false, msg: isUserAuthorised.msg });
   }
 
-  const bootlogs = await deviceController.getBootlogs(req.params.dongle_id);
-
+  const bootlogs = await deviceController.getBootlogs(dongleId);
   return res.json({ success: true, data: bootlogs });
 });
 
-router.get('/:dongle_id/crashlogs', isAuthenticated, async (req, res) => {
-  const dongleId = req.params.dongle_id;
+router.get('/:dongleId/crashlogs', isAuthenticated, async (req, res) => {
+  const { dongleId } = req.params;
   const accountId = req.account.id;
   const isUserAuthorised = await deviceController.isUserAuthorised(dongleId, accountId);
   // TODO reduce data returned
@@ -96,8 +104,7 @@ router.get('/:dongle_id/crashlogs', isAuthenticated, async (req, res) => {
     return res.json({ success: false, msg: isUserAuthorised.msg });
   }
 
-  const crashlogs = await deviceController.getCrashlogs(req.params.dongle_id);
-
+  const crashlogs = await deviceController.getCrashlogs(dongleId);
   return res.json({ success: true, data: crashlogs });
 });
 

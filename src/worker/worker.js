@@ -271,7 +271,7 @@ async function updateSegments() {
         .update(segment.drive_identifier)
         .digest('hex');
 
-      const directoryTreePath = `${process.env.STORAGE_PATH + segment.dongle_id}/${dongleIdHash}/${driveIdentifierHash}/${segment.drive_identifier}/${segment.segment_id}`;
+      const directoryTreePath = `${process.env.STORAGE_PATH}${segment.dongle_id}/${dongleIdHash}/${driveIdentifierHash}/${segment.drive_identifier}/${segment.segment_id}`;
       const directoryTree = dirTree(directoryTreePath);
 
       if (!directoryTree || !directoryTree.children) {
@@ -350,7 +350,7 @@ async function updateDevices() {
     const dongleIdHash = crypto.createHmac('sha256', process.env.APP_SALT)
       .update(device.dongle_id)
       .digest('hex');
-    const devicePath = `${process.env.STORAGE_PATH + device.dongle_id}/${dongleIdHash}`;
+    const devicePath = `${process.env.STORAGE_PATH}${device.dongle_id}/${dongleIdHash}`;
     const deviceQuotaMb = Math.round(parseInt(execSync(`du -s ${devicePath} | awk -F'\t' '{print $1;}'`)
       .toString(), 10) / 1024);
     logger.info(`updateDevices device ${dongleId} has an updated storage_used of: ${deviceQuotaMb} MB`);
@@ -388,8 +388,8 @@ async function updateDrives() {
     const driveIdentifierHash = crypto.createHmac('sha256', process.env.APP_SALT)
       .update(drive.identifier)
       .digest('hex');
-    const driveUrl = `${process.env.BASE_DRIVE_DOWNLOAD_URL + drive.dongle_id}/${dongleIdHash}/${driveIdentifierHash}/${drive.identifier}`;
-    const drivePath = `${process.env.STORAGE_PATH + drive.dongle_id}/${dongleIdHash}/${driveIdentifierHash}/${drive.identifier}`;
+    const driveUrl = `${process.env.BASE_DRIVE_DOWNLOAD_URL}${drive.dongle_id}/${dongleIdHash}/${driveIdentifierHash}/${drive.identifier}`;
+    const drivePath = `${process.env.STORAGE_PATH}${drive.dongle_id}/${dongleIdHash}/${driveIdentifierHash}/${drive.identifier}`;
 
     let uploadComplete = true;
     let isProcessed = true;
