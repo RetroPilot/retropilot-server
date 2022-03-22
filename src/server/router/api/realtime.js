@@ -31,7 +31,7 @@ const whitelistParams = {
 router.get('/:dongleId/connected', isAuthenticated, async (req, res) => {
   const { account, params: { dongleId } } = req;
 
-  const device = await deviceController.getDeviceFromDongle(dongleId);
+  const device = await deviceController.getDeviceFromDongleId(dongleId);
   if (!device) {
     return res.status(400).json({
       error: true,
@@ -72,7 +72,7 @@ router.get('/:dongleId/send/:method/', isAuthenticated, async (req, res) => {
     });
   }
 
-  const device = await deviceController.getDeviceFromDongle(dongleId);
+  const device = await deviceController.getDeviceFromDongleId(dongleId);
   if (!device) {
     return res.status(400).json({
       error: true,
@@ -110,7 +110,7 @@ router.get('/:dongle_id/get', async (req, res) => {
       errorObject: { authenticated: false },
     });
   }
-  const device = await deviceController.getDeviceFromDongle(req.params.dongle_id);
+  const device = await deviceController.getDeviceFromDongleId(req.params.dongle_id);
   if (!device) {
     return res.status(400).json({
       error: true,
@@ -147,7 +147,7 @@ router.get('/:dongle_id/temp/nav/:lat/:long', async (req, res) => {
   if (account == null) {
     return res.status(403).json({ error: true, errorMsg: 'Unauthenticated', errorObject: { authenticated: false } });
   }
-  const device = await deviceController.getDeviceFromDongle(req.params.dongle_id);
+  const device = await deviceController.getDeviceFromDongleId(req.params.dongle_id);
   if (!device) {
     return res.status(400).json({ error: true, errorMsg: 'no_dongle', errorObject: { authenticated: true, dongle_exists: false } });
   }

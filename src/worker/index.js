@@ -11,7 +11,7 @@ process.on('unhandledRejection', (error, p) => {
   console.dir(error.stack);
 });
 
-const logger = log4js.getLogger('default');
+const logger = log4js.getLogger();
 
 // make sure bunzip2 is available
 try {

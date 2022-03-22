@@ -10,7 +10,7 @@ export default (app) => {
   describe('/api', () => {
     it('Load general app stats', (done) => {
       request(server)
-        .get('/retropilot/0/useradmin')
+        .get('/api/useradmin')
         .expect('Content-Type', /json/)
         .expect(200)
         .expect((req) => {
@@ -36,7 +36,7 @@ export default (app) => {
             // eslint-disable-next-line no-empty
           } catch (ignored) {
           }
-          throw new Error('Invalid returned parameters in GET /retropilot/0/useradmin ');
+          throw new Error('Invalid returned parameters in GET /api/useradmin ');
         })
         .end(done);
     });

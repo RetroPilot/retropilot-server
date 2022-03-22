@@ -1,7 +1,7 @@
 import nodemailer from 'nodemailer';
 import log4js from 'log4js';
 
-const logger = log4js.getLogger('default');
+const logger = log4js.getLogger();
 const transporter = nodemailer.createTransport(
   {
     host: process.env.SMTP_HOST,

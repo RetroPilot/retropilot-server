@@ -12,8 +12,9 @@ import helperController from '../controllers/helpers';
 import mailingController from '../controllers/mailing';
 import deviceController from '../controllers/devices';
 import userController from '../controllers/users';
+import { getAccount, isAuthenticated } from '../middlewares/authentication';
 
-const logger = log4js.getLogger('default');
+const logger = log4js.getLogger();
 let models;
 const router = express.Router();
 // TODO Remove this, pending on removing all auth logic from routes
@@ -228,8 +229,8 @@ router.get('/useradmin/overview', runAsyncWrapper(async (req, res) => {
 <h3>Pair New Devices</h3>
 <i>* To pair a new device, first have it auto-register on this server.<br>Then scan the QR Code and paste the Device Token below.</i><br>
 ${req.query.linkstatus !== undefined ? `<br><u>${htmlspecialchars(req.query.linkstatus)}</u><br><br>` : ''}
-<form action="/useradmin/pair_device" method="POST">
-<input type="text" name="qr_string" placeholder="QR Code Device Token" required>
+<form action="/api/useradmin/pair_device" method="POST">
+<input type="text" name="qrString" placeholder="QR Code Device Token" required>
 <input type="submit" value="Pair">
 </form>
 <br><br>
@@ -241,7 +242,7 @@ ${req.query.linkstatus !== undefined ? `<br><u>${htmlspecialchars(req.query.link
   return res.status(200).send(response);
 }));
 
-router.get('/useradmin/unpair_device/:dongleId', runAsyncWrapper(async (req, res) => {
+router.get('/api/useradmin/unpair_device/:dongleId', runAsyncWrapper(async (req, res) => {
   const account = await authenticationController.getAuthenticatedAccount(req);
   if (account == null) {
     return res.redirect(`/useradmin?status=${encodeURIComponent('Invalid or expired session')}`);
@@ -250,14 +251,14 @@ router.get('/useradmin/unpair_device/:dongleId', runAsyncWrapper(async (req, res
   return res.redirect('/useradmin/overview');
 }));
 
-router.post('/useradmin/pair_device', bodyParser.urlencoded({ extended: true }), runAsyncWrapper(async (req, res) => {
-  const account = await authenticationController.getAuthenticatedAccount(req);
-  if (account == null) {
+router.post('/useradmin/pair_device', [getAccount, bodyParser.urlencoded({ extended: true })], runAsyncWrapper(async (req, res) => {
+  const { account, body: { qrString } } = req;
+  if (!account) {
     res.redirect(`/useradmin?status=${encodeURIComponent('Invalid or expired session')}`);
     return;
   }
 
-  const pairDevice = await deviceController.pairDevice(account, req.body.qr_string);
+  const pairDevice = await deviceController.pairDevice(account, req.body.qrString);
   if (pairDevice.success === true) {
     res.redirect('/useradmin/overview');
   } else if (pairDevice.registered === true) {
@@ -281,7 +282,7 @@ router.get('/useradmin/device/:dongleId', runAsyncWrapper(async (req, res) => {
     return res.redirect(`/useradmin?status=${encodeURIComponent('Invalid or expired session')}`);
   }
 
-  const device = await deviceController.getDeviceFromDongle(req.params.dongleId);
+  const device = await deviceController.getDeviceFromDongleId(req.params.dongleId);
   if (device == null || device.account_id !== account.id) {
     return res.status(400).send('Unauthorized.');
   }
@@ -428,7 +429,7 @@ router.get('/useradmin/drive/:dongleId/:driveIdentifier', runAsyncWrapper(async 
     return res.redirect(`/useradmin?status=${encodeURIComponent('Invalid or expired session')}`);
   }
 
-  const device = await deviceController.getDeviceFromDongle(req.params.dongleId);
+  const device = await deviceController.getDeviceFromDongleId(req.params.dongleId);
   if (device == null || device.account_id !== account.id) {
     return res.status(400).send('Unauthorized.');
   }

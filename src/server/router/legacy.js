@@ -1,16 +1,15 @@
-/* eslint-disable */
-import express from 'express';
 import bodyParser from 'body-parser';
 import crypto from 'crypto';
+import express from 'express';
 import log4js from 'log4js';
-import storageController from '../controllers/storage';
+
+import { validateJWT } from '../controllers/authentication';
 import deviceController from '../controllers/devices';
-import authenticationController from '../controllers/authentication';
-import userController from '../controllers/users';
+import storageController from '../controllers/storage';
+import { getAccountFromId } from '../controllers/users';
 
-const logger = log4js.getLogger('default');
+const logger = log4js.getLogger();
 const router = express.Router();
-
 
 function runAsyncWrapper(callback) {
   return function wrapper(req, res, next) {
@@ -20,7 +19,6 @@ function runAsyncWrapper(callback) {
 }
 
 // TODO(cameron): clean up this mess into separate files
-
 
 // DRIVE & BOOT/CRASH LOG FILE UPLOAD HANDLING
 router.put('/backend/post_upload', bodyParser.raw({
@@ -67,7 +65,7 @@ router.get('/v1.1/devices/:dongleId/', runAsyncWrapper(async (req, res) => {
   const { dongleId } = req.params;
   logger.info(`HTTP.DEVICES called for ${req.params.dongleId}`);
 
-  const device = deviceController.getDeviceFromDongle(dongleId);
+  const device = deviceController.getDeviceFromDongleId(dongleId);
 
   if (!device) {
     logger.info(`HTTP.DEVICES device ${dongleId} not found`);
@@ -75,7 +73,7 @@ router.get('/v1.1/devices/:dongleId/', runAsyncWrapper(async (req, res) => {
   }
 
   const decoded = device.public_key
-    ? await authenticationController.validateJWT(req.headers.authorization, device.public_key)
+    ? await validateJWT(req.headers.authorization, device.public_key)
     : null;
 
   if ((!decoded || decoded.identity !== req.params.dongleId)) {
@@ -107,14 +105,14 @@ router.get('/v1.1/devices/:dongleId/stats', runAsyncWrapper(async (req, res) => 
     },
   };
 
-  const device = await deviceController.getDeviceFromDongle(dongleId);
+  const device = await deviceController.getDeviceFromDongleId(dongleId);
   if (!device) {
     logger.info(`HTTP.STATS device ${dongleId} not found`);
     return res.status(404).json('Not found.');
   }
 
   const decoded = device.public_key
-    ? await authenticationController.validateJWT(req.headers.authorization, device.public_key)
+    ? await validateJWT(req.headers.authorization, device.public_key)
     : null;
 
   if ((!decoded || decoded.identity !== req.params.dongleId)) {
@@ -123,27 +121,26 @@ router.get('/v1.1/devices/:dongleId/stats', runAsyncWrapper(async (req, res) => 
   }
 
   // TODO reimplement weekly stats
-
-  /*const statresult = await models.get('SELECT COUNT(*) as routes, ROUND(SUM(distance_meters)/1609.34) as distance, ROUND(SUM(duration)/60) as duration FROM drives WHERE dongle_id=?', device.dongle_id);
-  if (statresult != null && statresult.routes != null) {
-    stats.all.routes = statresult.routes;
-    stats.all.distance = statresult.distance != null ? statresult.distance : 0;
-    stats.all.minutes = statresult.duration != null ? statresult.duration : 0;
-  }
-
-  // this determines the date at 00:00:00 UTC of last monday (== beginning of the current "ISO"week)
-  const d = new Date();
-  const day = d.getDay();
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-  const lastMonday = new Date(d.setDate(diff));
-  lastMonday.setHours(0, 0, 0, 0);
-
-  const statresultweek = await models.get('SELECT COUNT(*) as routes, ROUND(SUM(distance_meters)/1609.34) as distance, ROUND(SUM(duration)/60) as duration FROM drives WHERE dongle_id=? AND drive_date >= ?', device.dongle_id, lastMonday.getTime());
-  if (statresultweek != null && statresultweek.routes != null) {
-    stats.week.routes = statresultweek.routes;
-    stats.week.distance = statresultweek.distance != null ? statresultweek.distance : 0;
-    stats.week.minutes = statresultweek.duration != null ? statresultweek.duration : 0;
-  }*/
+  // const statresult = await models.get('SELECT COUNT(*) as routes, ROUND(SUM(distance_meters)/1609.34) as distance, ROUND(SUM(duration)/60) as duration FROM drives WHERE dongle_id=?', device.dongle_id);
+  // if (statresult != null && statresult.routes != null) {
+  //   stats.all.routes = statresult.routes;
+  //   stats.all.distance = statresult.distance != null ? statresult.distance : 0;
+  //   stats.all.minutes = statresult.duration != null ? statresult.duration : 0;
+  // }
+  //
+  // // this determines the date at 00:00:00 UTC of last monday (== beginning of the current "ISO"week)
+  // const d = new Date();
+  // const day = d.getDay();
+  // const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  // const lastMonday = new Date(d.setDate(diff));
+  // lastMonday.setHours(0, 0, 0, 0);
+  //
+  // const statresultweek = await models.get('SELECT COUNT(*) as routes, ROUND(SUM(distance_meters)/1609.34) as distance, ROUND(SUM(duration)/60) as duration FROM drives WHERE dongle_id=? AND drive_date >= ?', device.dongle_id, lastMonday.getTime());
+  // if (statresultweek != null && statresultweek.routes != null) {
+  //   stats.week.routes = statresultweek.routes;
+  //   stats.week.distance = statresultweek.distance != null ? statresultweek.distance : 0;
+  //   stats.week.minutes = statresultweek.duration != null ? statresultweek.duration : 0;
+  // }
 
   logger.info(`HTTP.STATS for ${req.params.dongleId} returning: ${JSON.stringify(stats)}`);
   return res.status(200).json(stats);
@@ -154,7 +151,7 @@ router.get('/v1/devices/:dongleId/owner', runAsyncWrapper(async (req, res) => {
   const { dongleId } = req.params;
   logger.info(`HTTP.OWNER called for ${req.params.dongleId}`);
 
-  const device = await deviceController.getDeviceFromDongle(dongleId);
+  const device = await deviceController.getDeviceFromDongleId(dongleId);
 
   if (!device) {
     logger.info(`HTTP.OWNER device ${dongleId} not found`);
@@ -162,7 +159,7 @@ router.get('/v1/devices/:dongleId/owner', runAsyncWrapper(async (req, res) => {
   }
 
   const decoded = device.public_key
-    ? await authenticationController.validateJWT(req.headers.authorization, device.public_key)
+    ? await validateJWT(req.headers.authorization, device.public_key)
     : null;
 
   if ((!decoded || decoded.identity !== req.params.dongleId)) {
@@ -171,17 +168,17 @@ router.get('/v1/devices/:dongleId/owner', runAsyncWrapper(async (req, res) => {
   }
 
   let owner = '';
-  let points = 0;
+  const points = 0;
 
-  let account = await userController.getAccountFromId(device.account_id);
+  let account = await getAccountFromId(device.account_id);
   if (account != null && account.dataValues != null) {
-    account = account.dataValues
+    account = account.dataValues;
     [owner] = account.email.split('@');
     // TODO reimplement "points"
-    /*const stats = await models.all('SELECT SUM(distance_meters) as points FROM drives WHERE dongle_id IN (SELECT dongle_id FROM devices WHERE account_id=?)', account.id);
-    if (stats != null && stats.points != null) {
-      points = stats.points;
-    }*/
+    // const stats = await models.all('SELECT SUM(distance_meters) as points FROM drives WHERE dongle_id IN (SELECT dongle_id FROM devices WHERE account_id=?)', account.id);
+    // if (stats != null && stats.points != null) {
+    //   points = stats.points;
+    // }
   }
 
   const response = { username: owner, points };
@@ -196,14 +193,14 @@ async function upload(req, res) {
   const auth = req.headers.authorization;
   logger.info(`HTTP.UPLOAD_URL called for ${req.params.dongleId} and file ${path}: ${JSON.stringify(req.headers)}`);
 
-  const device = await deviceController.getDeviceFromDongle(dongleId);
+  const device = await deviceController.getDeviceFromDongleId(dongleId);
   if (!device) {
     logger.info(`HTTP.UPLOAD_URL device ${dongleId} not found or not linked to an account / refusing uploads`);
     return res.send('Unauthorized.').status(400);
   }
 
   const decoded = device.public_key
-    ? await authenticationController.validateJWT(req.headers.authorization, device.public_key).catch(logger.error)
+    ? await validateJWT(req.headers.authorization, device.public_key).catch(logger.error)
     : null;
 
   if ((!decoded || decoded.identity !== req.params.dongleId)) {
@@ -268,15 +265,16 @@ async function upload(req, res) {
       responseUrl = `${process.env.BASE_UPLOAD_URL}?file=${filename}&dir=${directory}&dongleId=${dongleId}&ts=${ts}&token=${token}`;
       logger.info(`HTTP.UPLOAD_URL matched 'drive' file upload, constructed responseUrl: ${responseUrl}`);
 
-      const drive = await deviceController.getDriveFromIdentifier(dongleId, driveName).catch((err)=>{
-        logger.warn("drive failed to make", err)
-      })
+      const drive = await deviceController.getDriveFromIdentifier(dongleId, driveName)
+        .catch((err) => {
+          logger.warn('drive failed to make', err);
+        });
 
-      logger.info("drive value", drive)
-      logger.info("drive name:", driveName)
+      logger.info('drive value', drive);
+      logger.info('drive name:', driveName);
 
       if (drive === undefined || drive === null) {
-        logger.info("CREATING NEW DRIVE")
+        logger.info('CREATING NEW DRIVE');
         // create a new drive
         const timeSplit = driveName.split('--');
         const timeString = `${timeSplit[0]} ${timeSplit[1].replace(/-/g, ':')}`;
@@ -294,7 +292,7 @@ async function upload(req, res) {
           is_preserved: false,
           is_deleted: false,
           is_physically_removed: false,
-        })
+        });
 
         await deviceController.updateOrCreateDriveSegment(dongleId, driveName, segment, {
           duration: 0,
@@ -303,27 +301,26 @@ async function upload(req, res) {
           is_processed: false,
           is_stalled: false,
           created: Date.now(),
-        })
+        });
 
         logger.info(`HTTP.UPLOAD_URL created new drive #${JSON.stringify(driveResult.lastID)}`);
       } else {
-        logger.info("UPDATING DRIVE")
+        logger.info('UPDATING DRIVE');
         await deviceController.updateOrCreateDrive(dongleId, driveName, {
           max_segment: Math.max(drive.max_segment, segment),
           upload_complete: false,
           is_processed: false,
           last_upload: Date.now(),
-        })
+        });
 
-          await deviceController.updateOrCreateDriveSegment(dongleId, driveName, segment, {
-            duration: 0,
-            distance_meters: 0,
-            upload_complete: false,
-            is_processed: false,
-            is_stalled: false,
-            created: Date.now()
-          })
-
+        await deviceController.updateOrCreateDriveSegment(dongleId, driveName, segment, {
+          duration: 0,
+          distance_meters: 0,
+          upload_complete: false,
+          is_processed: false,
+          is_stalled: false,
+          created: Date.now(),
+        });
 
         logger.info(`HTTP.UPLOAD_URL updated existing drive: ${JSON.stringify(drive)}`);
       }
@@ -347,7 +344,7 @@ router.post('/v2/pilotauth/', bodyParser.urlencoded({ extended: true }), async (
   const {
     serial,
     public_key: publicKey,
-    register_token: registerToken
+    register_token: registerToken,
   } = req.query;
 
   if (
@@ -359,13 +356,13 @@ router.post('/v2/pilotauth/', bodyParser.urlencoded({ extended: true }), async (
     return res.status(400).send('Malformed Request.');
   }
 
-  const decoded = await authenticationController.validateJWT(registerToken, publicKey);
+  const decoded = await validateJWT(registerToken, publicKey);
   if (!decoded || !decoded.register) {
     logger.error(`HTTP.V2.PILOTAUTH JWT token is invalid (${JSON.stringify(decoded)})`);
     return res.status(400).send('Malformed Request.');
   }
 
-  const device = await deviceController.getDeviceFromSerial(serial)
+  const device = await deviceController.getDeviceFromSerial(serial);
   if (device == null) {
     logger.info(`HTTP.V2.PILOTAUTH REGISTERING NEW DEVICE (${imei1}, ${serial})`);
 
@@ -373,23 +370,31 @@ router.post('/v2/pilotauth/', bodyParser.urlencoded({ extended: true }), async (
     // eslint-disable-next-line no-constant-condition
     while (true) {
       const dongleId = crypto.randomBytes(4).toString('hex');
-      const isDongleIdTaken = await deviceController.getDeviceFromDongle(dongleId);
+      const isDongleIdTaken = await deviceController.getDeviceFromDongleId(dongleId);
       if (isDongleIdTaken == null) {
-        await deviceController.createDongle(dongleId, 0, imei1, serial, publicKey)
+        await deviceController.createDongle(dongleId, 0, imei1, serial, publicKey);
 
-
-        const newDevice = await deviceController.getDeviceFromDongle(dongleId);
+        const newDevice = await deviceController.getDeviceFromDongleId(dongleId);
 
         logger.info(`HTTP.V2.PILOTAUTH REGISTERED NEW DEVICE: ${JSON.stringify(newDevice)}`);
-        return res.status(200).json({ dongle_id: newDevice.dongle_id, access_token: 'DEPRECATED-BUT-REQUIRED-FOR-07' });
+        return res.status(200).json({
+          dongle_id: newDevice.dongle_id,
+          access_token: 'DEPRECATED-BUT-REQUIRED-FOR-07',
+        });
       }
     }
   }
 
-  await deviceController.updateDevice(device.dongle_id, {last_ping: Date.now(), public_key: publicKey})
+  await deviceController.updateDevice(device.dongle_id, {
+    last_ping: Date.now(),
+    public_key: publicKey,
+  });
 
   logger.info(`HTTP.V2.PILOTAUTH REACTIVATING KNOWN DEVICE (${imei1}, ${serial}) with dongle_id ${device.dongle_id}`);
-  return res.status(200).json({ dongle_id: device.dongle_id, access_token: 'DEPRECATED-BUT-REQUIRED-FOR-07' });
+  return res.status(200).json({
+    dongle_id: device.dongle_id,
+    access_token: 'DEPRECATED-BUT-REQUIRED-FOR-07',
+  });
 });
 
 // RETRIEVES DATASET FOR OUR MODIFIED CABANA - THIS RESPONSE IS USED TO FAKE A DEMO ROUTE
@@ -400,7 +405,7 @@ router.get('/useradmin/cabana_drive/:extendedRouteIdentifier', runAsyncWrapper(a
   const driveIdentifier = params[2];
   const driveIdentifierHashReq = params[3];
 
-  const drive = await deviceController.getDrive(dongleId, driveIdentifier)
+  const drive = await deviceController.getDrive(dongleId, driveIdentifier);
 
   if (!drive) {
     return res.status(200).json({ status: 'drive not found' });

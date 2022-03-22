@@ -1,21 +1,15 @@
-/* eslint-disable global-require */
+import express from 'express';
 
-import useradmin from './useradmin';
 import api from './api';
-import useradminapi from './userAdminApi';
-import admin from './administration/adminApi';
-import realtime from './api/realtime';
-import deviceApi from './api/devices';
-import authenticationApi from './api/auth';
-import oauthAuthenticator from './api/authentication/oauth';
+import legacy from './legacy';
+import useradmin from './useradmin';
 
-export default {
-  useradmin,
-  api,
-  useradminapi,
-  admin,
-  realtime,
-  deviceApi,
-  authenticationApi,
-  oauthAuthenticator,
-};
+const router = express.Router();
+
+// TODO: refactor
+router.use(legacy);
+
+router.use('/api', api);
+router.use('/useradmin', useradmin);
+
+export default router;

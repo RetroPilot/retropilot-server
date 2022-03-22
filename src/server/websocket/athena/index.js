@@ -10,7 +10,7 @@ import { AthenaActionLog, AthenaReturnedData } from '../../../models';
 import deviceController from '../../controllers/devices';
 import helperFunctions from './helpers';
 
-const logger = log4js.getLogger('default');
+const logger = log4js.getLogger();
 
 let helpers;
 let wss;
@@ -78,7 +78,7 @@ async function manageConnection(ws, res) {
   ws.on('message', async (message) => {
     heartbeat.call(ws);
     if (!ws.dongleId) {
-      wss.retropilotFunc.actionLogger(null, null, 'ATHENA_DEVICE_UNATHENTICATED_MESSAGE', null, ws._socket.remoteAddress, JSON.stringify([message]), ws.dongleId);
+      wss.retropilotFunc.actionLogger(null, null, 'ATHENA_DEVICE_UNAUTHENTICATED_MESSAGE', null, ws._socket.remoteAddress, JSON.stringify([message]), ws.dongleId);
       console.log('unauthenticated message, discarded');
       return;
     }
@@ -133,7 +133,7 @@ wss.retropilotFunc = {
       return false;
     }
 
-    const device = await deviceController.getDeviceFromDongle(unsafeJwt.identity);
+    const device = await deviceController.getDeviceFromDongleId(unsafeJwt.identity);
 
     let verifiedJWT;
     console.log('JWT', cookies.jwt);

@@ -3,7 +3,7 @@ import log4js from 'log4js';
 
 import { Accounts } from '../../models';
 
-const logger = log4js.getLogger('default');
+const logger = log4js.getLogger();
 
 export async function getAccountFromId(id) {
   return Accounts.findByPk(id);

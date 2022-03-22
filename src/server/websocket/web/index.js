@@ -8,7 +8,7 @@ import athenaRealtime from '../athena';
 import controlsFunction from './controls';
 import realtimeCommands from './commands';
 
-const logger = log4js.getLogger('default');
+const logger = log4js.getLogger();
 
 let server;
 let wss;

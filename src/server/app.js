@@ -1,15 +1,13 @@
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express from 'express';
-import rateLimit from 'express-rate-limit';
 import log4js from 'log4js';
 
 import storageController from './controllers/storage';
-import athena from './websocket/athena';
 import controllers from './controllers';
-import routers from './router';
+import router from './router';
 
-const logger = log4js.getLogger('default');
+const logger = log4js.getLogger();
 
 function runAsyncWrapper(callback) {
   return function wrapper(req, res, next) {
@@ -30,27 +28,7 @@ app.use(cors({
 }));
 app.use(cookieParser());
 
-app.use('/api', routers.api);
-app.use('/useradmin', routers.useradmin);
-
-if (process.env.ATHENA_ENABLED) {
-  const athenaRateLimit = rateLimit({
-    windowMs: 30000,
-    max: process.env.ATHENA_API_RATE_LIMIT,
-  });
-
-  app.use((req, res, next) => {
-    req.athenaWebsocketTemp = athena;
-    return next();
-  });
-
-  app.use('/admin', routers.admin);
-  app.use('/realtime', athenaRateLimit);
-  app.use('/realtime', routers.realtime);
-  // app.use(routers.oauthAuthenticator)
-} else {
-  logger.info('Athena disabled');
-}
+app.use(router);
 
 app.use('/favicon.ico', express.static('static/favicon.ico'));
 app.use(process.env.BASE_DRIVE_DOWNLOAD_PATH_MAPPING, express.static(process.env.STORAGE_PATH));

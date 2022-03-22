@@ -3,7 +3,7 @@ import { ClientCredentials, ResourceOwnerPassword, AuthorizationCode } from 'sim
 import log4js from 'log4js';
 import { AUTH_OAUTH_ERR_GOOGLE, AUTH_OAUTH_ERR_GOOGLE_FAILED_TOKEN_FETCH } from '../../../consistency/terms';
 
-const logger = log4js.getLogger('default');
+const logger = log4js.getLogger();
 
 const keys = {
   web: {

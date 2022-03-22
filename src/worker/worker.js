@@ -14,7 +14,7 @@ import {
   deleteFolderRecursive,
 } from './storage';
 
-const logger = log4js.getLogger('default');
+const logger = log4js.getLogger();
 
 const startTime = Date.now();
 let lastCleaningTime = 0;

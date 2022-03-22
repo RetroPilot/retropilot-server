@@ -8,7 +8,7 @@ import { isAuthenticated } from '../../middlewares/authentication';
 import deviceController from '../../controllers/devices';
 import { MutateDevice } from '../../schema/routes/devices';
 
-const logger = log4js.getLogger('default');
+const logger = log4js.getLogger();
 
 // /api/devices
 const router = express.Router();

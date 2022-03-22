@@ -3,7 +3,7 @@ import fs from 'fs';
 import log4js from 'log4js';
 import path from 'path';
 
-const logger = log4js.getLogger('default');
+const logger = log4js.getLogger();
 
 let totalStorageUsed;
 

@@ -13,7 +13,7 @@ import {
 import { readJWT, validateJWT } from './authentication';
 import { getAccountFromId } from './users';
 
-const logger = log4js.getLogger('default');
+const logger = log4js.getLogger();
 const sanitize = sanitizeFactory();
 
 async function pairDevice(account, qrString) {
@@ -72,12 +72,13 @@ async function pairDeviceToAccountId(dongleId, accountId) {
   return { success: false, paired: false };
 }
 
-async function unpairDevice(account, dongleId) {
+async function unpairDevice(dongleId, accountId) {
   const device = await Devices.getOne(
-    { where: { account_id: account.id, dongle_id: dongleId } },
+    { where: { account_id: accountId, dongle_id: dongleId } },
   );
 
   if (device && device.dataValues) {
+    // TODO: check result?
     await Devices.update(
       { account_id: 0 },
       { where: { dongle_id: dongleId } },
@@ -108,17 +109,24 @@ async function getDevices(accountId) {
   return Devices.findAll({ where: { account_id: accountId } });
 }
 
-async function getDeviceFromDongle(dongleId) {
-  if (!dongleId) return null;
-  const devices = await Devices.findOne({ where: { dongle_id: dongleId } });
-  if (!devices || !devices.dataValues) {
+async function getDeviceFromDongleId(dongleId) {
+  if (!dongleId) {
     return null;
   }
-  return devices.dataValues;
+
+  const device = await Devices.findOne({ where: { dongle_id: dongleId } });
+  if (!device || !device.dataValues) {
+    return null;
+  }
+  return device.dataValues;
 }
+
 // TODO combine these redundant functions into one
 async function getDeviceFromSerial(serial) {
-  if (!serial) return null;
+  if (!serial) {
+    return null;
+  }
+
   const devices = await Devices.findOne({ where: { serial } });
   if (!devices || !devices.dataValues) {
     return null;
@@ -127,8 +135,9 @@ async function getDeviceFromSerial(serial) {
 }
 
 async function updateDevice(dongleId, data) {
-  if (!dongleId) return null;
-
+  if (!dongleId) {
+    return null;
+  }
   return Devices.update(data, { where: { dongle_id: dongleId } });
 }
 
@@ -163,7 +172,7 @@ async function isUserAuthorised(accountId, dongleId) {
     return { success: false, msg: 'bad_account', data: { authorised: false, account_id: accountId } };
   }
 
-  const device = await getDeviceFromDongle(dongleId);
+  const device = await getDeviceFromDongleId(dongleId);
   if (!device) {
     return { success: false, msg: 'bad_device', data: { authorised: false, dongle_id: dongleId } };
   }
@@ -180,7 +189,7 @@ async function isUserAuthorised(accountId, dongleId) {
 }
 
 async function getOwnersFromDongle(dongleId) {
-  const device = await getDeviceFromDongle(dongleId);
+  const device = await getDeviceFromDongleId(dongleId);
   if (!device) {
     return { success: false };
   }
@@ -342,7 +351,7 @@ export default {
   unpairDevice,
   setDeviceNickname,
   getDevices,
-  getDeviceFromDongle,
+  getDeviceFromDongleId,
   setIgnoredUploads,
   getAllDevicesFiltered,
   pairDeviceToAccountId,

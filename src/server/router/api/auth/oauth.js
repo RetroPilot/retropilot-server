@@ -5,7 +5,7 @@ import { getURL, getToken } from '../../../controllers/authentication/oauth/goog
 import { isAuthenticated } from '../../../middlewares/authentication';
 
 const router = express.Router();
-const logger = log4js.getLogger('default');
+const logger = log4js.getLogger();
 
 router.get('/authentication/oauth/callback', async (req, res) => {
   logger.info(req.query);

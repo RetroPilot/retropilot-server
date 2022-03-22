@@ -5,7 +5,9 @@ import { Accounts } from '../../models';
 
 async function isCurrentUserAdmin(hardFail, req) {
   const account = await authentication.getAuthenticatedAccount(req);
-  if (!account) return { isAdmin: false, account };
+  if (!account) {
+    return { isAdmin: false, account };
+  }
   if (account.admin !== 1) {
     return { isAdmin: false, account };
   }
