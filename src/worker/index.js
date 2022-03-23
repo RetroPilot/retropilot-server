@@ -1,5 +1,7 @@
 import log4js from 'log4js';
 
+import worker from './worker';
+
 log4js.configure({
   appenders: { logfile: { type: 'file', filename: 'worker.log' }, out: { type: 'console' } },
   categories: { default: { appenders: ['out', 'logfile'], level: 'info' } },
@@ -21,4 +23,4 @@ try {
   process.exit();
 }
 
-require('./worker');
+worker();
