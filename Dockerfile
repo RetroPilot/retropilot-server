@@ -1,6 +1,6 @@
 FROM node:16-alpine AS cabana
 
-ENV CABANA_REF="bc1a174d8c47b3759fa07da00fc49824d8e2b029"
+ENV CABANA_REF="1214b91eb4f988ce5b08aec005e6a30feb560f2f"
 
 RUN apk update && \
     apk add --no-cache git
