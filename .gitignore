@@ -14,7 +14,8 @@ database
 # Miscellaneous
 .DS_Store
 *.log
-.env
+.env*
+!.env*.sample
 
 # Build
 dist
