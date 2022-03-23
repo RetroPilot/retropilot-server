@@ -28,12 +28,12 @@ function runAsyncWrapper(callback) {
 }
 
 if (process.env.NODE_ENV === 'development') {
-  router.get('/useradmin/createbaseaccount', runAsyncWrapper(async (req, res) => {
+  router.get('/createbaseaccount', runAsyncWrapper(async (req, res) => {
     res.send(await userController.createBaseAccount());
   }));
 }
 
-router.post('/useradmin/auth', bodyParser.urlencoded({ extended: true }), runAsyncWrapper(async (req, res) => {
+router.post('/auth', bodyParser.urlencoded({ extended: true }), runAsyncWrapper(async (req, res) => {
   const signIn = await authenticationController.signIn(req.body.email, req.body.password);
 
   logger.info(signIn);
@@ -46,13 +46,13 @@ router.post('/useradmin/auth', bodyParser.urlencoded({ extended: true }), runAsy
   }
 }));
 
-router.get('/useradmin/signout', runAsyncWrapper(async (req, res) => {
+router.get('/signout', runAsyncWrapper(async (req, res) => {
   res.clearCookie('session');
   res.clearCookie('jwt');
   res.redirect(`/useradmin?status=${encodeURIComponent('Signed out')}`);
 }));
 
-router.get('/useradmin', runAsyncWrapper(async (req, res) => {
+router.get('/', runAsyncWrapper(async (req, res) => {
   const account = await authenticationController.getAuthenticatedAccount(req);
   if (account != null) {
     res.redirect('/useradmin/overview');
@@ -92,7 +92,7 @@ router.get('/useradmin', runAsyncWrapper(async (req, res) => {
     <br><br>${process.env.WELCOME_MESSAGE}` */);
 }));
 
-router.post('/useradmin/register/token', bodyParser.urlencoded({ extended: true }), runAsyncWrapper(async (req, res) => {
+router.post('/register/token', bodyParser.urlencoded({ extended: true }), runAsyncWrapper(async (req, res) => {
   const { email } = req.body;
   if (!email) {
     logger.warn('/useradmin/register/token - Malformed Request!');
@@ -167,7 +167,7 @@ router.post('/useradmin/register/token', bodyParser.urlencoded({ extended: true 
 </html>`);
 }));
 
-router.get('/useradmin/register', runAsyncWrapper(async (req, res) => {
+router.get('/register', runAsyncWrapper(async (req, res) => {
   if (!process.env.ALLOW_REGISTRATION) {
     return res.status(400).send('Unauthorized.');
   }
@@ -190,7 +190,7 @@ router.get('/useradmin/register', runAsyncWrapper(async (req, res) => {
 </html>`);
 }));
 
-router.get('/useradmin/overview', runAsyncWrapper(async (req, res) => {
+router.get('/overview', runAsyncWrapper(async (req, res) => {
   let account = await authenticationController.getAuthenticatedAccount(req);
   if (account === null) {
     return res.redirect(`/useradmin?status=${encodeURIComponent('Invalid or expired session')}`);
@@ -242,6 +242,7 @@ ${req.query.linkstatus !== undefined ? `<br><u>${htmlspecialchars(req.query.link
   return res.status(200).send(response);
 }));
 
+// TODO: move to useradmin api
 router.get('/api/useradmin/unpair_device/:dongleId', runAsyncWrapper(async (req, res) => {
   const account = await authenticationController.getAuthenticatedAccount(req);
   if (account == null) {
@@ -251,7 +252,7 @@ router.get('/api/useradmin/unpair_device/:dongleId', runAsyncWrapper(async (req,
   return res.redirect('/useradmin/overview');
 }));
 
-router.post('/useradmin/pair_device', [getAccount, bodyParser.urlencoded({ extended: true })], runAsyncWrapper(async (req, res) => {
+router.post('/pair_device', [getAccount, bodyParser.urlencoded({ extended: true })], runAsyncWrapper(async (req, res) => {
   const { account, body: { qrString } } = req;
   if (!account) {
     res.redirect(`/useradmin?status=${encodeURIComponent('Invalid or expired session')}`);
@@ -274,7 +275,7 @@ router.post('/useradmin/pair_device', [getAccount, bodyParser.urlencoded({ exten
   }
 }));
 
-router.get('/useradmin/device/:dongleId', runAsyncWrapper(async (req, res) => {
+router.get('/device/:dongleId', runAsyncWrapper(async (req, res) => {
   const { dongleId } = req.params;
 
   const account = await authenticationController.getAuthenticatedAccount(req);
@@ -398,7 +399,7 @@ router.get('/useradmin/device/:dongleId', runAsyncWrapper(async (req, res) => {
   return res.status(200).send(response);
 }));
 
-router.get('/useradmin/drive/:dongleId/:driveIdentifier/:action', runAsyncWrapper(async (req, res) => {
+router.get('/drive/:dongleId/:driveIdentifier/:action', runAsyncWrapper(async (req, res) => {
   const account = await authenticationController.getAuthenticatedAccount(req);
   if (account == null) {
     return res.redirect(`/useradmin?status=${encodeURIComponent('Invalid or expired session')}`);
@@ -423,7 +424,7 @@ router.get('/useradmin/drive/:dongleId/:driveIdentifier/:action', runAsyncWrappe
   return res.redirect(`/useradmin/device/${device.dongle_id}`);
 }));
 
-router.get('/useradmin/drive/:dongleId/:driveIdentifier', runAsyncWrapper(async (req, res) => {
+router.get('/drive/:dongleId/:driveIdentifier', runAsyncWrapper(async (req, res) => {
   const account = await authenticationController.getAuthenticatedAccount(req);
   if (account == null) {
     return res.redirect(`/useradmin?status=${encodeURIComponent('Invalid or expired session')}`);
