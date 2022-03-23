@@ -62,27 +62,39 @@ router.put('/backend/post_upload', bodyParser.raw({
 
 // RETURN THE PAIRING STATUS
 router.get('/v1.1/devices/:dongleId/', runAsyncWrapper(async (req, res) => {
+  const { authorization } = req.headers;
   const { dongleId } = req.params;
-  logger.info(`HTTP.DEVICES called for ${req.params.dongleId}`);
+  logger.info(`HTTP.DEVICES called for ${dongleId}`);
 
-  const device = deviceController.getDeviceFromDongleId(dongleId);
-
+  const device = await deviceController.getDeviceFromDongleId(dongleId);
   if (!device) {
     logger.info(`HTTP.DEVICES device ${dongleId} not found`);
     return res.status(404).json({ is_paired: false, prime: false });
   }
 
-  const decoded = device.public_key
-    ? await validateJWT(req.headers.authorization, device.public_key)
+  const {
+    account_id: accountId,
+    public_key: publicKey,
+  } = device;
+
+  const decoded = publicKey
+    ? await validateJWT(authorization, publicKey)
     : null;
 
-  if ((!decoded || decoded.identity !== req.params.dongleId)) {
-    logger.info(`HTTP.DEVICES JWT authorization failed, token: ${req.headers.authorization} device: ${JSON.stringify(device)}, decoded: ${JSON.stringify(decoded)}`);
-    return res.status(400).send('Unauthorized.');
+  if ((!decoded || decoded.identity !== dongleId)) {
+    logger.info('HTTP.DEVICES JWT authorization failed', {
+      token: authorization,
+      device,
+      decoded,
+    });
+    return res.status(401).send('Unauthorized.');
   }
 
-  const response = { is_paired: (device.account_id !== 0), prime: (device.account_id > 0) };
-  logger.info(`HTTP.DEVICES for ${req.params.dongleId} returning: ${JSON.stringify(response)}`);
+  const response = {
+    is_paired: (accountId !== 0),
+    prime: (accountId > 0),
+  };
+  logger.info(`HTTP.DEVICES for ${dongleId} returning: ${JSON.stringify(response)}`);
 
   return res.status(200).json(response);
 }));
@@ -90,7 +102,7 @@ router.get('/v1.1/devices/:dongleId/', runAsyncWrapper(async (req, res) => {
 // RETURN STATS FOR DASHBOARD
 router.get('/v1.1/devices/:dongleId/stats', runAsyncWrapper(async (req, res) => {
   const { dongleId } = req.params;
-  logger.info(`HTTP.STATS called for ${req.params.dongleId}`);
+  logger.info(`HTTP.STATS called for ${dongleId}`);
 
   const stats = {
     all: {
@@ -111,13 +123,15 @@ router.get('/v1.1/devices/:dongleId/stats', runAsyncWrapper(async (req, res) => 
     return res.status(404).json('Not found.');
   }
 
+  const { public_key: publicKey } = device;
+  const { authorization } = req.headers;
   const decoded = device.public_key
-    ? await validateJWT(req.headers.authorization, device.public_key)
+    ? await validateJWT(authorization, publicKey)
     : null;
 
-  if ((!decoded || decoded.identity !== req.params.dongleId)) {
-    logger.info(`HTTP.STATS JWT authorization failed, token: ${req.headers.authorization} device: ${JSON.stringify(device)}, decoded: ${JSON.stringify(decoded)}`);
-    return res.status(400).send('Unauthorized.');
+  if ((!decoded || decoded.identity !== dongleId)) {
+    logger.info(`HTTP.STATS JWT authorization failed, token: ${authorization} device: ${JSON.stringify(device)}, decoded: ${JSON.stringify(decoded)}`);
+    return res.status(401).send('Unauthorized.');
   }
 
   // TODO reimplement weekly stats
@@ -142,14 +156,14 @@ router.get('/v1.1/devices/:dongleId/stats', runAsyncWrapper(async (req, res) => 
   //   stats.week.minutes = statresultweek.duration != null ? statresultweek.duration : 0;
   // }
 
-  logger.info(`HTTP.STATS for ${req.params.dongleId} returning: ${JSON.stringify(stats)}`);
+  logger.info(`HTTP.STATS for ${dongleId} returning: ${JSON.stringify(stats)}`);
   return res.status(200).json(stats);
 }));
 
 // RETURN USERNAME & POINTS FOR DASHBOARD
 router.get('/v1/devices/:dongleId/owner', runAsyncWrapper(async (req, res) => {
   const { dongleId } = req.params;
-  logger.info(`HTTP.OWNER called for ${req.params.dongleId}`);
+  logger.info(`HTTP.OWNER called for ${dongleId}`);
 
   const device = await deviceController.getDeviceFromDongleId(dongleId);
 
@@ -162,9 +176,9 @@ router.get('/v1/devices/:dongleId/owner', runAsyncWrapper(async (req, res) => {
     ? await validateJWT(req.headers.authorization, device.public_key)
     : null;
 
-  if ((!decoded || decoded.identity !== req.params.dongleId)) {
+  if ((!decoded || decoded.identity !== dongleId)) {
     logger.info(`HTTP.OWNER JWT authorization failed, token: ${req.headers.authorization} device: ${JSON.stringify(device)}, decoded: ${JSON.stringify(decoded)}`);
-    return res.send('Unauthorized.').status(400);
+    return res.status(401).send('Unauthorized.');
   }
 
   let owner = '';
@@ -182,7 +196,7 @@ router.get('/v1/devices/:dongleId/owner', runAsyncWrapper(async (req, res) => {
   }
 
   const response = { username: owner, points };
-  logger.info(`HTTP.OWNER for ${req.params.dongleId} returning: ${JSON.stringify(response)}`);
+  logger.info(`HTTP.OWNER for ${dongleId} returning: ${JSON.stringify(response)}`);
 
   return res.status(200).json(response);
 }));
@@ -191,24 +205,24 @@ async function upload(req, res) {
   let { path } = req.query;
   const { dongleId } = req.params;
   const auth = req.headers.authorization;
-  logger.info(`HTTP.UPLOAD_URL called for ${req.params.dongleId} and file ${path}: ${JSON.stringify(req.headers)}`);
+  logger.info(`HTTP.UPLOAD_URL called for ${dongleId} and file ${path}: ${JSON.stringify(req.headers)}`);
 
   const device = await deviceController.getDeviceFromDongleId(dongleId);
   if (!device) {
     logger.info(`HTTP.UPLOAD_URL device ${dongleId} not found or not linked to an account / refusing uploads`);
-    return res.send('Unauthorized.').status(400);
+    return res.status(404).send('Not Found.');
   }
 
   const decoded = device.public_key
     ? await validateJWT(req.headers.authorization, device.public_key).catch(logger.error)
     : null;
 
-  if ((!decoded || decoded.identity !== req.params.dongleId)) {
+  if ((!decoded || decoded.identity !== dongleId)) {
     logger.info(`HTTP.UPLOAD_URL JWT authorization failed, token: ${auth} device: ${JSON.stringify(device)}, decoded: ${JSON.stringify(decoded)}`);
-    return res.send('Unauthorized.').status(400);
+    return res.status(401).send('Unauthorized.');
   }
 
-  deviceController.updateLastPing(dongleId).catch(logger.error);
+  await deviceController.updateLastPing(dongleId).catch(logger.error);
 
   let responseUrl = null;
   const ts = Date.now(); // we use this to make sure old URLs cannot be reused (timeout after 60min)
@@ -254,7 +268,7 @@ async function upload(req, res) {
 
       if (!validRequest) {
         logger.error(`HTTP.UPLOAD_URL invalid filename (${filename}) or invalid segment (${segment}), responding with HTTP 400`);
-        return res.send('Malformed Request.').status(400);
+        return res.status(400).send('Malformed Request.');
       }
 
       const driveIdentifierHash = crypto.createHmac('sha256', process.env.APP_SALT).update(driveName).digest('hex');
@@ -340,12 +354,15 @@ router.get('/v1.4/:dongleId/upload_url', upload);
 
 // DEVICE REGISTRATION OR RE-ACTIVATION
 router.post('/v2/pilotauth/', bodyParser.urlencoded({ extended: true }), async (req, res) => {
-  const imei1 = req.query.imei;
+  /* eslint-disable no-unused-vars */
   const {
+    imei: imei1,
+    imei2,
     serial,
     public_key: publicKey,
     register_token: registerToken,
   } = req.query;
+  /* eslint-enable no-unused-vars */
 
   if (
     serial == null || serial.length < 5
@@ -371,17 +388,17 @@ router.post('/v2/pilotauth/', bodyParser.urlencoded({ extended: true }), async (
     while (true) {
       const dongleId = crypto.randomBytes(4).toString('hex');
       const isDongleIdTaken = await deviceController.getDeviceFromDongleId(dongleId);
-      if (isDongleIdTaken == null) {
-        await deviceController.createDongle(dongleId, 0, imei1, serial, publicKey);
-
-        const newDevice = await deviceController.getDeviceFromDongleId(dongleId);
-
-        logger.info(`HTTP.V2.PILOTAUTH REGISTERED NEW DEVICE: ${JSON.stringify(newDevice)}`);
-        return res.status(200).json({
-          dongle_id: newDevice.dongle_id,
-          access_token: 'DEPRECATED-BUT-REQUIRED-FOR-07',
-        });
+      if (isDongleIdTaken) {
+        continue;
       }
+
+      const newDevice = await deviceController.createDongle(dongleId, 0, imei1, serial, publicKey);
+
+      logger.info('HTTP.V2.PILOTAUTH REGISTERED NEW DEVICE:', { newDevice, registerToken });
+      return res.status(201).json({
+        dongle_id: newDevice.dongle_id,
+        access_token: 'DEPRECATED-BUT-REQUIRED-FOR-07',
+      });
     }
   }
 
@@ -399,16 +416,12 @@ router.post('/v2/pilotauth/', bodyParser.urlencoded({ extended: true }), async (
 
 // RETRIEVES DATASET FOR OUR MODIFIED CABANA - THIS RESPONSE IS USED TO FAKE A DEMO ROUTE
 router.get('/useradmin/cabana_drive/:extendedRouteIdentifier', runAsyncWrapper(async (req, res) => {
-  const params = req.params.extendedRouteIdentifier.split('|');
-  const dongleId = params[0];
-  const dongleIdHashReq = params[1];
-  const driveIdentifier = params[2];
-  const driveIdentifierHashReq = params[3];
+  const { extendedRouteIdentifier } = req.params;
+  const [dongleId, dongleIdHashReq, driveIdentifier, driveIdentifierHashReq] = extendedRouteIdentifier.split('|');
 
   const drive = await deviceController.getDrive(dongleId, driveIdentifier);
-
   if (!drive) {
-    return res.status(200).json({ status: 'drive not found' });
+    return res.status(404).json({ status: 'drive not found' });
   }
 
   const dongleIdHash = crypto.createHmac('sha256', process.env.APP_SALT).update(drive.dongle_id).digest('hex');
@@ -416,11 +429,11 @@ router.get('/useradmin/cabana_drive/:extendedRouteIdentifier', runAsyncWrapper(a
   const driveUrl = `${process.env.BASE_DRIVE_DOWNLOAD_URL + drive.dongle_id}/${dongleIdHash}/${driveIdentifierHash}/${drive.identifier}`;
 
   if (dongleIdHash !== dongleIdHashReq || driveIdentifierHash !== driveIdentifierHashReq) {
-    return res.status(200).json({ status: 'hashes not matching' });
+    return res.status(400).json({ status: 'hashes not matching' });
   }
 
   if (!drive.is_processed) {
-    return res.status(200).json({ status: 'drive is not processed yet' });
+    return res.status(202).json({ status: 'drive is not processed yet' });
   }
 
   const logUrls = [];
