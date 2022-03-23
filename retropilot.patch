@@ -8,3 +8,4 @@ index 1525e1715..a58067926 100755
  export PASSIVE="0"
 +export API_HOST="https://api.retropilot.org"
  exec ./launch_chffrplus.sh
+ 
