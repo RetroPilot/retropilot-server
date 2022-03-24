@@ -519,7 +519,7 @@ router.get('/drive/:dongleId/:driveIdentifier', requireAuthenticated, runAsyncWr
         <b>Preview <span id="current_preview_segment"></span>:</b>
         ${cabanaUrl ? `
                     <video id="drive_preview" class="video-js vjs-default-skin" controls width="480" height="386">
-                        <source src="${driveUrl}/qcamera.m3u8" type='application/x-mpegURL'>
+                        <source src="${driveUrl}qcamera.m3u8" type='application/x-mpegURL'>
                     </video>
                     <script>
                     const player = videojs('drive_preview', {
@@ -586,11 +586,11 @@ router.get('/drive/:dongleId/:driveIdentifier', requireAuthenticated, runAsyncWr
     let qlog = '--';
     let rlog = '--';
     directory.children.forEach((file) => {
-      if (file.name === 'fcamera.hevc') fcamera = `${driveUrl}${segment}<a target="_blank" href="/">${file.name}</a>`;
-      if (file.name === 'dcamera.hevc') dcamera = `${driveUrl}${segment}<a target="_blank" href="/">${file.name}</a>`;
-      if (file.name === 'qcamera.ts') qcamera = `${driveUrl}${segment}<a target="_blank" href="/">${file.name}</a>`;
-      if (file.name === 'qlog.bz2') qlog = `${driveUrl}${segment}<a target="_blank" href="/">${file.name}</a>`;
-      if (file.name === 'rlog.bz2') rlog = `${driveUrl}${segment}<a target="_blank" href="/">${file.name}</a>`;
+      if (file.name === 'fcamera.hevc') fcamera = `<a target="_blank" href="${driveUrl}${segment}/${file.name}">${file.name}</a>`;
+      else if (file.name === 'dcamera.hevc') dcamera = `<a target="_blank" href="${driveUrl}${segment}/${file.name}">${file.name}</a>`;
+      else if (file.name === 'qcamera.ts') qcamera = `<a target="_blank" href="${driveUrl}${segment}/${file.name}">${file.name}</a>`;
+      else if (file.name === 'qlog.bz2') qlog = `<a target="_blank" href="${driveUrl}${segment}/${file.name}">${file.name}</a>`;
+      else if (file.name === 'rlog.bz2') rlog = `<a target="_blank" href="${driveUrl}${segment}/${file.name}">${file.name}</a>`;
     });
 
     let isProcessed = '?';
