@@ -2,7 +2,7 @@ import express from 'express';
 import log4js from 'log4js';
 
 import { getURL, getToken } from '../../../controllers/authentication/oauth/google';
-import { isAuthenticated } from '../../../middlewares/authentication';
+import { requireAuthenticated } from '../../../middlewares/authentication';
 
 const router = express.Router();
 const logger = log4js.getLogger();
@@ -32,7 +32,7 @@ router.get('/authentication/oauth/:provider', async (req, res) => {
   }
 });
 
-router.get('/authentication/oauth/pair/:provider', isAuthenticated, async (req, res) => {
+router.get('/authentication/oauth/pair/:provider', requireAuthenticated, async (req, res) => {
   res.status(200);
 });
 

@@ -4,7 +4,7 @@ import cookieParser from 'cookie-parser';
 
 import controllers from '../../controllers';
 import deviceController from '../../controllers/devices';
-import { isAuthenticated } from '../../middlewares/authentication';
+import { requireAuthenticated } from '../../middlewares/authentication';
 
 // TODO Remove this, pending on removing all auth logic from routes
 
@@ -59,7 +59,7 @@ router.get('/', runAsyncWrapper(async (req, res) => {
   });
 }));
 
-router.get('/overview', isAuthenticated, runAsyncWrapper(async (req, res) => {
+router.get('/overview', requireAuthenticated, runAsyncWrapper(async (req, res) => {
   const { account } = req;
   const devices = await deviceController.getDevices(account.id);
 
@@ -74,7 +74,7 @@ router.get('/overview', isAuthenticated, runAsyncWrapper(async (req, res) => {
   });
 }));
 
-router.get('/unpair_device/:dongleId', isAuthenticated, runAsyncWrapper(async (req, res) => {
+router.get('/unpair_device/:dongleId', requireAuthenticated, runAsyncWrapper(async (req, res) => {
   const { account, params: { dongleId } } = req;
 
   const device = await deviceController.getDeviceFromDongleId(dongleId);
@@ -92,15 +92,20 @@ router.get('/unpair_device/:dongleId', isAuthenticated, runAsyncWrapper(async (r
   return res.status(200).json({ success: true });
 }));
 
-router.post('/pair_device', [isAuthenticated, bodyParser.urlencoded({ extended: true })], runAsyncWrapper(async (req, res) => {
-  const { account, body: { qrString } } = req;
+router.post('/pair_device', [requireAuthenticated, bodyParser.urlencoded({ extended: true })], runAsyncWrapper(async (req, res) => {
+  const { qrString } = req.body;
   if (!qrString) {
     return res.json({ success: false, msg: 'BAD_REQUEST', status: 400 });
   }
 
+  const { account } = req;
   const pairDevice = await controllers.devices.pairDevice(account, qrString);
   if (!pairDevice.success) {
-    return res.json({ success: false, msg: 'error', data: pairDevice });
+    return res.json({
+      success: false,
+      msg: 'error',
+      data: pairDevice,
+    });
   }
 
   return res.json({
@@ -111,7 +116,7 @@ router.post('/pair_device', [isAuthenticated, bodyParser.urlencoded({ extended: 
   });
 }));
 
-router.post('/password/change', [isAuthenticated, bodyParser.urlencoded({ extended: true })], runAsyncWrapper(async (req, res) => {
+router.post('/password/change', [requireAuthenticated, bodyParser.urlencoded({ extended: true })], runAsyncWrapper(async (req, res) => {
   const { account, body: { oldPassword, newPassword } } = req;
   const result = await controllers.authentication.changePassword(
     account,

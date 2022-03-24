@@ -12,7 +12,7 @@ import helperController from '../controllers/helpers';
 import mailingController from '../controllers/mailing';
 import deviceController from '../controllers/devices';
 import userController from '../controllers/users';
-import { getAccount, isAuthenticated } from '../middlewares/authentication';
+import { getAccount, requireAuthenticated } from '../middlewares/authentication';
 
 const logger = log4js.getLogger();
 let models;

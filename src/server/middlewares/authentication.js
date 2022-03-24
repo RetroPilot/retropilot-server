@@ -5,7 +5,7 @@ export const getAccount = async (req, res, next) => {
   next();
 };
 
-export const isAuthenticated = async (req, res, next) => {
+export const requireAuthenticated = async (req, res, next) => {
   const account = await authenticationController.getAuthenticatedAccount(req);
   if (!account) {
     res.status(401).json({

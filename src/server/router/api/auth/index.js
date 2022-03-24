@@ -2,13 +2,13 @@ import bodyParser from 'body-parser';
 import express from 'express';
 
 import authenticationController from '../../../controllers/authentication';
-import { isAuthenticated } from '../../../middlewares/authentication';
+import { requireAuthenticated } from '../../../middlewares/authentication';
 import { createAccount, verifyEmailToken } from '../../../controllers/users';
 
 // /api/auth
 const router = express.Router();
 
-router.get('/session', isAuthenticated, async (req, res) => {
+router.get('/session', requireAuthenticated, async (req, res) => {
   return res.status(200).json({
     success: true,
     data: {

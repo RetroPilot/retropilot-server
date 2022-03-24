@@ -3,7 +3,7 @@ import express from 'express';
 import { AthenaReturnedData } from '../../../models';
 import authenticationController from '../../controllers/authentication';
 import deviceController from '../../controllers/devices';
-import { isAuthenticated } from '../../middlewares/authentication';
+import { requireAuthenticated } from '../../middlewares/authentication';
 
 // /api/realtime
 const router = express.Router();
@@ -28,7 +28,7 @@ const whitelistParams = {
 
 // TODO: use middleware to get device from dongle id
 
-router.get('/:dongleId/connected', isAuthenticated, async (req, res) => {
+router.get('/:dongleId/connected', requireAuthenticated, async (req, res) => {
   const { account, params: { dongleId } } = req;
 
   const device = await deviceController.getDeviceFromDongleId(dongleId);
@@ -61,7 +61,7 @@ router.get('/:dongleId/connected', isAuthenticated, async (req, res) => {
 });
 
 // TODO: change to POST request
-router.get('/:dongleId/send/:method/', isAuthenticated, async (req, res) => {
+router.get('/:dongleId/send/:method/', requireAuthenticated, async (req, res) => {
   const { account, params: { dongleId, method } } = req;
 
   if (!whitelistParams[method.toLowerCase()]) {
