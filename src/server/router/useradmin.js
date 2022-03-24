@@ -7,15 +7,15 @@ import htmlspecialchars from 'htmlspecialchars';
 import dirTree from 'directory-tree';
 import cookieParser from 'cookie-parser';
 import log4js from 'log4js';
+
 import authenticationController from '../controllers/authentication';
 import helperController from '../controllers/helpers';
 import mailingController from '../controllers/mailing';
 import deviceController from '../controllers/devices';
 import userController from '../controllers/users';
-import { getAccount, requireAuthenticated } from '../middlewares/authentication';
+import { getAccount } from '../middlewares/authentication';
 
-const logger = log4js.getLogger();
-let models;
+const logger = log4js.getLogger('useradmin');
 const router = express.Router();
 // TODO Remove this, pending on removing all auth logic from routes
 router.use(cookieParser());
@@ -26,6 +26,16 @@ function runAsyncWrapper(callback) {
       .catch(next);
   };
 }
+
+const requireAuthenticated = async (req, res, next) => {
+  const account = await authenticationController.getAuthenticatedAccount(req);
+  if (account == null) {
+    return res.redirect(`/useradmin?status=${encodeURIComponent('Invalid or expired session')}`);
+  } else {
+    req.account = account;
+    return next();
+  }
+};
 
 if (process.env.NODE_ENV === 'development') {
   router.get('/createbaseaccount', runAsyncWrapper(async (req, res) => {
@@ -52,8 +62,8 @@ router.get('/signout', runAsyncWrapper(async (req, res) => {
   res.redirect(`/useradmin?status=${encodeURIComponent('Signed out')}`);
 }));
 
-router.get('/', runAsyncWrapper(async (req, res) => {
-  const account = await authenticationController.getAuthenticatedAccount(req);
+router.get('/', getAccount, runAsyncWrapper(async (req, res) => {
+  const { account } = req;
   if (account != null) {
     res.redirect('/useradmin/overview');
     return;
@@ -167,13 +177,12 @@ router.post('/register/token', bodyParser.urlencoded({ extended: true }), runAsy
 </html>`);
 }));
 
-router.get('/register', runAsyncWrapper(async (req, res) => {
+router.get('/register', getAccount, runAsyncWrapper(async (req, res) => {
   if (!process.env.ALLOW_REGISTRATION) {
-    return res.status(400).send('Unauthorized.');
+    return res.status(401).send('Unauthorized.');
   }
 
-  const account = await authenticationController.getAuthenticatedAccount(req);
-  if (account != null) {
+  if (req.account) {
     return res.redirect('/useradmin/overview');
   }
 
@@ -190,14 +199,8 @@ router.get('/register', runAsyncWrapper(async (req, res) => {
 </html>`);
 }));
 
-router.get('/overview', runAsyncWrapper(async (req, res) => {
-  let account = await authenticationController.getAuthenticatedAccount(req);
-  if (account === null) {
-    return res.redirect(`/useradmin?status=${encodeURIComponent('Invalid or expired session')}`);
-  }
-
-  account = account.dataValues;
-
+router.get('/overview', requireAuthenticated, runAsyncWrapper(async (req, res) => {
+  const { account } = req;
   const devices = await deviceController.getDevices(account.id);
 
   let response = `<html style="font-family: monospace">
@@ -243,21 +246,13 @@ ${req.query.linkstatus !== undefined ? `<br><u>${htmlspecialchars(req.query.link
 }));
 
 // TODO: move to useradmin api
-router.get('/api/useradmin/unpair_device/:dongleId', runAsyncWrapper(async (req, res) => {
-  const account = await authenticationController.getAuthenticatedAccount(req);
-  if (account == null) {
-    return res.redirect(`/useradmin?status=${encodeURIComponent('Invalid or expired session')}`);
-  }
-
+router.get('/api/useradmin/unpair_device/:dongleId', requireAuthenticated, runAsyncWrapper(async (req, res) => {
+  // TODO: implement unpair_device?
   return res.redirect('/useradmin/overview');
 }));
 
-router.post('/pair_device', [getAccount, bodyParser.urlencoded({ extended: true })], runAsyncWrapper(async (req, res) => {
+router.post('/pair_device', [requireAuthenticated, bodyParser.urlencoded({ extended: true })], runAsyncWrapper(async (req, res) => {
   const { account, body: { qrString } } = req;
-  if (!account) {
-    res.redirect(`/useradmin?status=${encodeURIComponent('Invalid or expired session')}`);
-    return;
-  }
 
   const pairDevice = await deviceController.pairDevice(account, qrString);
   if (pairDevice.success === true) {
@@ -275,33 +270,30 @@ router.post('/pair_device', [getAccount, bodyParser.urlencoded({ extended: true 
   }
 }));
 
-router.get('/device/:dongleId', runAsyncWrapper(async (req, res) => {
+router.get('/device/:dongleId', requireAuthenticated, runAsyncWrapper(async (req, res) => {
   const { dongleId } = req.params;
-
-  const account = await authenticationController.getAuthenticatedAccount(req);
-  if (account == null) {
-    return res.redirect(`/useradmin?status=${encodeURIComponent('Invalid or expired session')}`);
-  }
-
   const device = await deviceController.getDeviceFromDongleId(dongleId);
   if (!device) {
     return res.status(404).send('Not Found.');
-  } else if (device.account_id !== account.id) {
+  }
+
+  const { account_id: accountId } = device;
+  if (accountId !== req.account.id) {
     return res.status(401).send('Unauthorized.');
   }
 
-  const drives = await deviceController.getDrives(device.dongle_id, false, true);
+  const drives = await deviceController.getDrives(dongleId, false, true);
 
-  const dongleIdHash = crypto.createHmac('sha256', process.env.APP_SALT).update(device.dongle_id).digest('hex');
+  const dongleIdHash = crypto.createHmac('sha256', process.env.APP_SALT).update(dongleId).digest('hex');
 
-  const bootlogFiles = await deviceController.getBootlogs(device.dongle_id);
-  const crashlogFiles = await deviceController.getCrashlogs(device.dongle_id);
+  const bootlogFiles = await deviceController.getBootlogs(dongleId);
+  const crashlogFiles = await deviceController.getCrashlogs(dongleId);
 
   let response = `<html style="font-family: monospace">
     <h2>Welcome To The RetroPilot Server Dashboard!</h2>
     <a href="/useradmin/overview">< < < Back To Overview</a>
     <br><br>
-    <h3>Device ${device.dongle_id}</h3>
+    <h3>Device ${dongleId}</h3>
     <b>Type:</b> ${device.device_type}<br>
     <b>Serial:</b> ${device.serial}<br>
     <b>IMEI:</b> ${device.imei}<br>
@@ -319,7 +311,7 @@ router.get('/device/:dongleId', runAsyncWrapper(async (req, res) => {
     <tr><th>date</th><th>file</th><th>size</th></tr>
 `;
   for (let i = 0; i < Math.min(5, bootlogFiles.length); i++) {
-    response += `<tr><td>${helperController.formatDate(bootlogFiles[i].date)}</td><td><a href="${process.env.BASE_DRIVE_DOWNLOAD_URL}${device.dongle_id}/${dongleIdHash}/boot/${bootlogFiles[i].name}" target=_blank>${bootlogFiles[i].name}</a></td><td>${bootlogFiles[i].size}</td></tr>`;
+    response += `<tr><td>${helperController.formatDate(bootlogFiles[i].date)}</td><td><a href="${process.env.BASE_DRIVE_DOWNLOAD_URL}${dongleId}/${dongleIdHash}/boot/${bootlogFiles[i].name}" target=_blank>${bootlogFiles[i].name}</a></td><td>${bootlogFiles[i].size}</td></tr>`;
   }
   response += '</table><br><br>';
 
@@ -329,7 +321,7 @@ router.get('/device/:dongleId', runAsyncWrapper(async (req, res) => {
   for (let i = 0; i < Math.min(5, crashlogFiles.length); i++) {
     response += `<tr>
     <td>${helperController.formatDate(crashlogFiles[i].date)}</td>.
-    <td><a href="${process.env.BASE_DRIVE_DOWNLOAD_URL}${device.dongle_id}/${dongleIdHash}/crash/${crashlogFiles[i].name}" target=_blank>${crashlogFiles[i].name}</a></td>
+    <td><a href="${process.env.BASE_DRIVE_DOWNLOAD_URL}${dongleId}/${dongleIdHash}/crash/${crashlogFiles[i].name}" target=_blank>${crashlogFiles[i].name}</a></td>
     <td>${crashlogFiles[i].size}</td>
 </tr>`;
   }
@@ -373,7 +365,7 @@ router.get('/device/:dongleId', runAsyncWrapper(async (req, res) => {
     }
 
     response += `<tr>
-    <td><a href="/useradmin/drive/${drive.dongle_id}/${drive.identifier}">${drive.is_preserved ? '<b>' : ''}${drive.identifier}${drive.is_preserved ? '</b>' : ''}</a></td>
+    <td><a href="/useradmin/drive/${dongleId}/${drive.identifier}">${drive.is_preserved ? '<b>' : ''}${drive.identifier}${drive.is_preserved ? '</b>' : ''}</a></td>
     <td>${vehicle}</td>
     <td>${version}</td>
     <td>${Math.round(drive.filesize / 1024)} MiB</td>
@@ -383,8 +375,8 @@ router.get('/device/:dongleId', runAsyncWrapper(async (req, res) => {
     <td>${drive.is_processed}</td>
     <td>${helperController.formatDate(drive.created)}</td>
     <td>
-        [<a href="/useradmin/drive/${drive.dongle_id}/${drive.identifier}/delete" onclick="return confirm('Permanently delete this drive?')">delete</a>]
-        ${drive.is_preserved ? '' : `[<a href="/useradmin/drive/${drive.dongle_id}/${drive.identifier}/preserve">preserve</a>]`}
+        [<a href="/useradmin/drive/${dongleId}/${drive.identifier}/delete" onclick="return confirm('Permanently delete this drive?')">delete</a>]
+        ${drive.is_preserved ? '' : `[<a href="/useradmin/drive/${dongleId}/${drive.identifier}/preserve">preserve</a>]`}
     </td>
 </tr>`;
   });
@@ -392,7 +384,7 @@ router.get('/device/:dongleId', runAsyncWrapper(async (req, res) => {
   response += `    </table>
     <br>
     <hr/>
-    <a href="/useradmin/unpair_device/${device.dongle_id}" onclick="return confirm('Are you sure that you want to unpair your device? Uploads will be rejected until it is paired again.')">Unpair Device</a>
+    <a href="/useradmin/unpair_device/${dongleId}" onclick="return confirm('Are you sure that you want to unpair your device? Uploads will be rejected until it is paired again.')">Unpair Device</a>
     <br><br>
     <hr/>
     <a href="/useradmin/signout">Sign Out</a>
@@ -401,58 +393,38 @@ router.get('/device/:dongleId', runAsyncWrapper(async (req, res) => {
   return res.status(200).send(response);
 }));
 
-// TODO: move to user admin api?
-router.get('/drive/:dongleId/:driveIdentifier/:action', runAsyncWrapper(async (req, res) => {
-  const account = await authenticationController.getAuthenticatedAccount(req);
-  if (account == null) {
-    return res.redirect(`/useradmin?status=${encodeURIComponent('Invalid or expired session')}`);
-  }
-
-  const drive = await deviceController.getDrive(req.params.dongleId, req.params.driveIdentifier);
-  if (drive == null) {
-    return res.status(404).send('Not Found.');
-  }
-
-  const { action } = req.params;
-  if (action === 'delete') {
-    await deviceController.updateOrCreateDrive(req.params.dongleId, drive.id, {
-      is_deleted: true,
-    });
-  } else if (action === 'preserve') {
-    await deviceController.updateOrCreateDrive(req.params.dongleId, drive.id, {
-      is_preserved: true,
-    });
-  }
-
-  return res.redirect(`/useradmin/device/${device.dongle_id}`);
-}));
-
-router.get('/drive/:dongleId/:driveIdentifier', runAsyncWrapper(async (req, res) => {
-  const account = await authenticationController.getAuthenticatedAccount(req);
-  if (account == null) {
-    return res.redirect(`/useradmin?status=${encodeURIComponent('Invalid or expired session')}`);
-  }
-
-  const device = await deviceController.getDeviceFromDongleId(req.params.dongleId);
+router.get('/drive/:dongleId/:driveIdentifier', requireAuthenticated, runAsyncWrapper(async (req, res) => {
+  const { dongleId } = req.params;
+  const device = await deviceController.getDeviceFromDongleId(dongleId);
   if (!device) {
     return res.status(404).send('Not Found.');
-  } else if (device.account_id !== account.id) {
-    return res.status(401).send('Unauthorized.');
   }
 
-  const drive = await deviceController.getDrive(req.params.dongleId, req.params.driveIdentifier);
+  const { account_id: accountId } = device;
+  if (accountId !== req.account.id) {
+    return res.status(403).send('Forbidden.');
+  }
+
+  const { driveIdentifier } = req.params;
+  const drive = await deviceController.getDrive(dongleId, driveIdentifier);
   if (drive == null) {
     return res.status(404).send('Not Found.');
   }
 
-  const dongleIdHash = crypto.createHmac('sha256', process.env.APP_SALT).update(device.dongle_id).digest('hex');
-  const driveIdentifierHash = crypto.createHmac('sha256', process.env.APP_SALT).update(drive.identifier).digest('hex');
+  const dongleIdHash = crypto
+    .createHmac('sha256', process.env.APP_SALT)
+    .update(dongleId)
+    .digest('hex');
+  const driveIdentifierHash = crypto
+    .createHmac('sha256', process.env.APP_SALT)
+    .update(driveIdentifier)
+    .digest('hex');
 
-  const driveUrl = `${process.env.BASE_DRIVE_DOWNLOAD_URL + device.dongle_id}/${dongleIdHash}/${driveIdentifierHash}/${drive.identifier}/`;
+  const driveUrl = `${process.env.BASE_DRIVE_DOWNLOAD_URL + dongleId}/${dongleIdHash}/${driveIdentifierHash}/${driveIdentifier}/`;
 
   let cabanaUrl = null;
   if (drive.is_processed) {
-    cabanaUrl = `${process.env.CABANA_URL}?retropilotIdentifier=${device.dongle_id}|${dongleIdHash}|${drive.identifier}|${driveIdentifierHash}&retropilotHost=${encodeURIComponent(process.env.BASE_URL)}&demo=1"`;
+    cabanaUrl = `${process.env.CABANA_URL}?retropilotIdentifier=${dongleId}|${dongleIdHash}|${driveIdentifier}|${driveIdentifierHash}&retropilotHost=${encodeURIComponent(process.env.BASE_URL)}&demo=1"`;
   }
 
   let vehicle = '';
@@ -507,15 +479,15 @@ router.get('/drive/:dongleId/:driveIdentifier', runAsyncWrapper(async (req, res)
     </head>
     <body>
         <h2>Welcome To The RetroPilot Server Dashboard!</h2>
-        <a href="/useradmin/device/${device.dongle_id}">< < < Back To Device ${device.dongle_id}</a>
-        <br><br><h3>Drive ${drive.identifier} on ${drive.dongle_id}</h3>
+        <a href="/useradmin/device/${dongleId}">< < < Back To Device ${dongleId}</a>
+        <br><br><h3>Drive ${driveIdentifier} on ${dongleId}</h3>
         <b>Drive Date:</b> ${helperController.formatDate(drive.drive_date)}<br>
         <b>Upload Date:</b> ${helperController.formatDate(drive.created)}<br><br>
         <b>Vehicle:</b> ${vehicle}<br>
         <b>Openpilot Version:</b> ${version}<br><br>
-        <b>GIT Remote:</b> ${gitRemote}<br>
-        <b>GIT Branch:</b> ${gitBranch}<br>
-        <b>GIT Commit:</b> ${gitCommit}<br><br>
+        <b>Git Remote:</b> ${gitRemote}<br>
+        <b>Git Branch:</b> ${gitBranch}<br>
+        <b>Git Commit:</b> ${gitCommit}<br><br>
         <b>Num Segments:</b> ${drive.max_segment + 1}<br>
         <b>Storage:</b> ${Math.round(drive.filesize / 1024)} MiB<br>
         <b>Duration:</b> ${helperController.formatDuration(drive.duration)}<br>
@@ -595,64 +567,98 @@ router.get('/drive/:dongleId/:driveIdentifier', runAsyncWrapper(async (req, res)
         <table border=1 cellpadding=2 cellspacing=2>
             <tr><th>segment</th><th>qcamera</th><th>qlog</th><th>fcamera</th><th>rlog</th><th>dcamera</th><th>processed</th><th>stalled</th></tr>`;
 
-            const directoryTree = dirTree(process.env.STORAGE_PATH + device.dongle_id + "/" + dongleIdHash + "/" + driveIdentifierHash + "/" + drive.identifier);
+  const directoryTree = dirTree(`${process.env.STORAGE_PATH + dongleId}/${dongleIdHash}/${driveIdentifierHash}/${driveIdentifier}`);
   const directorySegments = {};
-  for (var i in directoryTree.children) {
+  await Promise.all(directoryTree.children.map(async (directory) => {
     // skip any non-directory entries (for example m3u8 file in the drive directory)
-    if (directoryTree.children[i].type != 'directory') continue;
+    if (directory.type !== 'directory') return;
 
-    var segment = directoryTree.children[i].name;
+    const segment = directory.name;
 
-
-    var qcamera = '--';
-    var fcamera = '--';
-    var dcamera = '--';
-    var qlog = '--';
-    var rlog = '--';
-    for (var c in directoryTree.children[i].children) {
-        if (directoryTree.children[i].children[c].name == 'fcamera.hevc') fcamera = '' + driveUrl + segment + '<a target="_blank" href="/">' + directoryTree.children[i].children[c].name + '' + directoryTree.children[i].children[c].name + '</a>';
-        if (directoryTree.children[i].children[c].name == 'dcamera.hevc') fcamera = '' + driveUrl + segment + '<a target="_blank" href="/">' + directoryTree.children[i].children[c].name + '' + directoryTree.children[i].children[c].name + '</a>';
-        if (directoryTree.children[i].children[c].name == 'qcamera.ts') qcamera = '' + driveUrl + segment + '<a target="_blank" href="/">' + directoryTree.children[i].children[c].name + '' + directoryTree.children[i].children[c].name + '</a>';
-        if (directoryTree.children[i].children[c].name == 'qlog.bz2') qlog = '' + driveUrl + segment + '<a target="_blank" href="/">' + directoryTree.children[i].children[c].name + '' + directoryTree.children[i].children[c].name + '</a>';
-        if (directoryTree.children[i].children[c].name == 'rlog.bz2') rlog = '' + driveUrl + segment + '<a target="_blank" href="/">' + directoryTree.children[i].children[c].name + '' + directoryTree.children[i].children[c].name + '</a>';
-    }
+    let fcamera = '--';
+    let dcamera = '--';
+    let qcamera = '--';
+    let qlog = '--';
+    let rlog = '--';
+    directory.children.forEach((file) => {
+      if (file.name === 'fcamera.hevc') fcamera = `${driveUrl}${segment}<a target="_blank" href="/">${file.name}</a>`;
+      if (file.name === 'dcamera.hevc') dcamera = `${driveUrl}${segment}<a target="_blank" href="/">${file.name}</a>`;
+      if (file.name === 'qcamera.ts') qcamera = `${driveUrl}${segment}<a target="_blank" href="/">${file.name}</a>`;
+      if (file.name === 'qlog.bz2') qlog = `${driveUrl}${segment}<a target="_blank" href="/">${file.name}</a>`;
+      if (file.name === 'rlog.bz2') rlog = `${driveUrl}${segment}<a target="_blank" href="/">${file.name}</a>`;
+    })
 
     let isProcessed = '?';
     let isStalled = '?';
 
-    const drive_segment = await models.__db.get('SELECT * FROM drive_segments WHERE segment_id = ? AND drive_identifier = ? AND dongle_id = ?', parseInt(segment), drive.identifier, device.dongle_id);
+    const driveSegment = await DriveSegments.findOne({
+      where: {
+        segment_id: parseInt(segment, 10),
+        drive_identifier: drive.identifier,
+        dongle_id: device.dongle_id
+      },
+    });
 
-    if (drive_segment) {
-        isProcessed = drive_segment.is_processed;
-        isStalled = drive_segment.is_stalled;
+    if (driveSegment) {
+      isProcessed = driveSegment.is_processed;
+      isStalled = driveSegment.is_stalled;
     }
 
-    directorySegments["seg-" + segment] = '<tr><td>' + segment + '</td><td>' + qcamera + '</td><td>' + qlog + '</td><td>' + fcamera + '</td><td>' + rlog + '</td><td>' + dcamera + '</td><td>' + isProcessed + '</td><td>' + isStalled + '</td></tr>';
-}
+    directorySegments[`seg-${segment}`] = `<tr><td>${segment}</td><td>${qcamera}</td><td>${qlog}</td><td>${fcamera}</td><td>${rlog}</td><td>${dcamera}</td><td>${isProcessed}</td><td>${isStalled}</td></tr>`;
+  }));
 
-var qcamera = '--';
-var fcamera = '--';
-var dcamera = '--';
-var qlog = '--';
-var rlog = '--';
-var isProcessed = '?';
-var isStalled = '?';
+  let qcamera = '--';
+  let fcamera = '--';
+  let dcamera = '--';
+  let qlog = '--';
+  let rlog = '--';
+  let isProcessed = '?';
+  let isStalled = '?';
 
-for (var i = 0; i <= drive.max_segment; i++) {
-    if (directorySegments["seg-" + i] == undefined) {
-        response += '<tr><td>' + i + '</td><td>' + qcamera + '</td><td>' + qlog + '</td><td>' + fcamera + '</td><td>' + rlog + '</td><td>' + dcamera + '</td><td>' + isProcessed + '</td><td>' + isStalled + '</td></tr>';
-    } else
-        response += directorySegments["seg-" + i];
-}
+  for (let i = 0; i <= drive.max_segment; i++) {
+    if (!directorySegments[`seg-${i}`]) {
+      response += `<tr><td>${i}</td><td>${qcamera}</td><td>${qlog}</td><td>${fcamera}</td><td>${rlog}</td><td>${dcamera}</td><td>${isProcessed}</td><td>${isStalled}</td></tr>`;
+    } else {
+      response += directorySegments[`seg-${i}`];
+    }
+  }
 
-response += `</table>
+  response += `</table>
             <br><br>
             <hr/>
             <a href="/useradmin/signout">Sign Out</a></body></html>`;
 
-res.status(200);
-res.send(response);
-
+  return res.status(200).send(response);
 }))
+
+// TODO: move to user admin api?
+router.get('/drive/:dongleId/:driveIdentifier/:action', requireAuthenticated, runAsyncWrapper(async (req, res) => {
+  const {
+    dongleId,
+    driveIdentifier,
+  } = req.params;
+  const drive = await deviceController.getDrive(dongleId, driveIdentifier);
+  if (!drive) {
+    return res.status(404).send('Not Found.');
+  }
+
+  const { account_id: accountId } = drive;
+  if (accountId !== req.account.id) {
+    return res.status(403).send('Forbidden.');
+  }
+
+  const { action } = req.params;
+  if (action === 'delete') {
+    await deviceController.updateOrCreateDrive(dongleId, driveIdentifier, {
+      is_deleted: true,
+    });
+  } else if (action === 'preserve') {
+    await deviceController.updateOrCreateDrive(dongleId, driveIdentifier, {
+      is_preserved: true,
+    });
+  }
+
+  return res.redirect(`/useradmin/device/${dongleId}`);
+}));
 
 export default router;
