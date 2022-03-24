@@ -18,7 +18,8 @@ router.get('/session', requireAuthenticated, async (req, res) => {
 });
 
 router.post('/login', bodyParser.urlencoded({ extended: true }), async (req, res) => {
-  const signIn = await authenticationController.signIn(req.body.email, req.body.password);
+  const { email, password } = req.body;
+  const signIn = await authenticationController.signIn(email, password);
   if (!signIn.success) {
     return res.status(401).json(signIn);
   }
