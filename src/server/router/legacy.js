@@ -214,7 +214,8 @@ async function upload(req, res) {
   }
 
   const decoded = device.public_key
-    ? await validateJWT(req.headers.authorization, device.public_key).catch(logger.error)
+    ? await validateJWT(req.headers.authorization, device.public_key)
+      .catch((err) => logger.error(err))
     : null;
 
   if ((!decoded || decoded.identity !== dongleId)) {
@@ -222,7 +223,9 @@ async function upload(req, res) {
     return res.status(401).send('Unauthorized.');
   }
 
-  await deviceController.updateLastPing(dongleId).catch(logger.error);
+  await deviceController
+    .updateLastPing(dongleId)
+    .catch((err) => logger.error(err));
 
   let responseUrl = null;
   const ts = Date.now(); // we use this to make sure old URLs cannot be reused (timeout after 60min)

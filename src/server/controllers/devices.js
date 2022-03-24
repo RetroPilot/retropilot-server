@@ -158,7 +158,7 @@ async function getAllDevicesFiltered() {
 async function updateLastPing(deviceId) {
   return Devices.update(
     { last_ping: Date.now() },
-    { where: { [Op.or]: [{ id: deviceId }, { dongle_id: deviceId }] } },
+    { where: { dongle_id: deviceId } },
   );
 }
 
@@ -197,7 +197,7 @@ async function getOwnersFromDongle(dongleId) {
 }
 
 async function getDrives(dongleId, includeDeleted, includeMeta) {
-  let query = { where: { dongle_id: dongleId } };
+  let query = { where: { dongle_id: dongleId }, order: [['created', 'DESC']] };
 
   if (!includeDeleted) {
     query = { ...query, where: { ...query.where, is_deleted: false } };

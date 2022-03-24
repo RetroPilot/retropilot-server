@@ -117,7 +117,7 @@ router.post('/register/token', bodyParser.urlencoded({ extended: true }), runAsy
 
   let infoText = '';
 
-  if (req.body.token === undefined) { // email entered, token request
+  if (!req.body.token) { // email entered, token request
     infoText = 'Please check your inbox (<b>SPAM</b>) for an email with the registration token.<br>If the token was not delivered, please ask the administrator to check the <i>server.log</i> for the token generated for your email.<br><br>';
 
     await mailingController.sendEmailVerification(token, email);
@@ -259,7 +259,7 @@ router.post('/pair_device', [getAccount, bodyParser.urlencoded({ extended: true 
     return;
   }
 
-  const pairDevice = await deviceController.pairDevice(account, req.body.qrString);
+  const pairDevice = await deviceController.pairDevice(account, qrString);
   if (pairDevice.success === true) {
     res.redirect('/useradmin/overview');
   } else if (pairDevice.registered === true) {
@@ -283,9 +283,11 @@ router.get('/device/:dongleId', runAsyncWrapper(async (req, res) => {
     return res.redirect(`/useradmin?status=${encodeURIComponent('Invalid or expired session')}`);
   }
 
-  const device = await deviceController.getDeviceFromDongleId(req.params.dongleId);
-  if (device == null || device.account_id !== account.id) {
-    return res.status(400).send('Unauthorized.');
+  const device = await deviceController.getDeviceFromDongleId(dongleId);
+  if (!device) {
+    return res.status(404).send('Not Found.');
+  } else if (device.account_id !== account.id) {
+    return res.status(401).send('Unauthorized.');
   }
 
   const drives = await deviceController.getDrives(device.dongle_id, false, true);
@@ -399,6 +401,7 @@ router.get('/device/:dongleId', runAsyncWrapper(async (req, res) => {
   return res.status(200).send(response);
 }));
 
+// TODO: move to user admin api?
 router.get('/drive/:dongleId/:driveIdentifier/:action', runAsyncWrapper(async (req, res) => {
   const account = await authenticationController.getAuthenticatedAccount(req);
   if (account == null) {
@@ -407,7 +410,7 @@ router.get('/drive/:dongleId/:driveIdentifier/:action', runAsyncWrapper(async (r
 
   const drive = await deviceController.getDrive(req.params.dongleId, req.params.driveIdentifier);
   if (drive == null) {
-    return res.status(400).send('Unauthorized.');
+    return res.status(404).send('Not Found.');
   }
 
   const { action } = req.params;
@@ -431,12 +434,15 @@ router.get('/drive/:dongleId/:driveIdentifier', runAsyncWrapper(async (req, res)
   }
 
   const device = await deviceController.getDeviceFromDongleId(req.params.dongleId);
-  if (device == null || device.account_id !== account.id) {
-    return res.status(400).send('Unauthorized.');
+  if (!device) {
+    return res.status(404).send('Not Found.');
+  } else if (device.account_id !== account.id) {
+    return res.status(401).send('Unauthorized.');
   }
+
   const drive = await deviceController.getDrive(req.params.dongleId, req.params.driveIdentifier);
   if (drive == null) {
-    return res.status(400).send('Unauthorized.');
+    return res.status(404).send('Not Found.');
   }
 
   const dongleIdHash = crypto.createHmac('sha256', process.env.APP_SALT).update(device.dongle_id).digest('hex');
