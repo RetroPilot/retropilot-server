@@ -321,7 +321,13 @@ async function updateSegments() {
       }
     });
 
-    const uploadComplete = Object.keys(fileStatus).every((key) => !!fileStatus[key]);
+    // dcamera not required for "upload complete"
+    const uploadComplete = [
+      SegmentFiles.fcamera,
+      SegmentFiles.qcamera,
+      SegmentFiles.qlog,
+      SegmentFiles.rlog,
+    ].every((key) => !!fileStatus[key]);
     logger.debug('updateSegments - uploadComplete', uploadComplete);
 
     if (fileStatus[SegmentFiles.qcamera] && fileStatus[SegmentFiles.rlog] && !isProcessed) {
