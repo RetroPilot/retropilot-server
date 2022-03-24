@@ -69,7 +69,11 @@ router.get('/v1.1/devices/:dongleId/', runAsyncWrapper(async (req, res) => {
   const device = await deviceController.getDeviceFromDongleId(dongleId);
   if (!device) {
     logger.info(`HTTP.DEVICES device ${dongleId} not found`);
-    return res.status(404).json({ is_paired: false, prime: false });
+    return res.status(200).json({
+      is_paired: false,
+      prime: false,
+      prime_type: 0,
+    });
   }
 
   const {

@@ -4,7 +4,12 @@ import log4js from 'log4js';
 
 import app from './app';
 import storageController from './controllers/storage';
-import orm, { Accounts, Devices, Drives } from '../models';
+import orm, {
+  Accounts,
+  Devices,
+  Drives,
+  DriveSegments,
+} from '../models';
 
 export default async () => {
   const logger = log4js.getLogger();
@@ -25,12 +30,22 @@ export default async () => {
   logger.info('Database synced', options);
 
   // debug: print out some info from the database
-  Promise.all([Accounts.findAll(), Devices.findAll(), Drives.findAll()])
-    .then(([accounts, devices, drives]) => {
-      logger.info(`Found ${accounts.length} accounts`);
-      logger.info(`Found ${devices.length} devices`);
-      logger.info(`Found ${drives.length} drives`);
-    });
+  await Promise.all([
+    Accounts.findAll(),
+    Devices.findAll(),
+    Drives.findAll(),
+    DriveSegments.findAll(),
+  ]).then(([
+    accounts,
+    devices,
+    drives,
+    driveSegments,
+  ]) => {
+    logger.info(`Found ${accounts.length} accounts`);
+    logger.info(`Found ${devices.length} devices`);
+    logger.info(`Found ${drives.length} drives`);
+    logger.info(`Found ${driveSegments.length} drive segments`);
+  });
 
   const httpServer = http.createServer(await app());
   httpServer.listen(process.env.HTTP_PORT, () => {

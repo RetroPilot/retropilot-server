@@ -252,9 +252,10 @@ async function updateSegments() {
     where: {
       upload_complete: false,
       is_stalled: false,
-      process_attempts: {
-        [Op.lt]: 5,
-      },
+      [Op.or]: [
+        { process_attempts: { [Op.lt]: 5 } },
+        { process_attempts: null },
+      ],
     },
     order: [['created', 'ASC']],
   });
