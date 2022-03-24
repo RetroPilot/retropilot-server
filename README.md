@@ -1,5 +1,7 @@
 # retropilot-server
 
+![Uptime Robot status](https://img.shields.io/uptimerobot/status/m791143178-df355c13f922c35db89054b0)
+![Uptime Robot ratio (7 days)](https://img.shields.io/uptimerobot/ratio/7/m791143178-df355c13f922c35db89054b0)
 ![CI workflow](https://github.com/RetroPilot/retropilot-server/actions/workflows/ci.yml/badge.svg)
 
 Replacement for comma.ai backend and useradmin dashboard. Bundled with a modified version of comma's cabana to allow viewing & analyzing drives.
