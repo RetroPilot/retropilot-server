@@ -1,11 +1,11 @@
 /* eslint-disable */
 // TODO: delete useradmin...
-import express from 'express';
 import bodyParser from 'body-parser';
-import crypto from 'crypto';
-import htmlspecialchars from 'htmlspecialchars';
-import dirTree from 'directory-tree';
 import cookieParser from 'cookie-parser';
+import crypto from 'crypto';
+import dirTree from 'directory-tree';
+import express from 'express';
+import htmlspecialchars from 'htmlspecialchars';
 import log4js from 'log4js';
 
 import authenticationController from '../controllers/authentication';
@@ -154,8 +154,8 @@ router.post('/register/token', bodyParser.urlencoded({ extended: true }), runAsy
     logger.debug('created account:', result);
 
     if (result.dataValues) {
-      const account = result.dataValues;
-      logger.info(`USERADMIN REGISTRATION - created new account #${account.id} with email ${email}`);
+      const newAccount = result.dataValues;
+      logger.info(`USERADMIN REGISTRATION - created new account #${newAccount.id} with email ${email}`);
       return res.redirect(`/useradmin?status=${encodeURIComponent('Successfully registered')}`);
     }
 
@@ -588,19 +588,13 @@ router.get('/drive/:dongleId/:driveIdentifier', requireAuthenticated, runAsyncWr
       if (file.name === 'qcamera.ts') qcamera = `${driveUrl}${segment}<a target="_blank" href="/">${file.name}</a>`;
       if (file.name === 'qlog.bz2') qlog = `${driveUrl}${segment}<a target="_blank" href="/">${file.name}</a>`;
       if (file.name === 'rlog.bz2') rlog = `${driveUrl}${segment}<a target="_blank" href="/">${file.name}</a>`;
-    })
+    });
 
     let isProcessed = '?';
     let isStalled = '?';
 
-    const driveSegment = await DriveSegments.findOne({
-      where: {
-        segment_id: parseInt(segment, 10),
-        drive_identifier: drive.identifier,
-        dongle_id: device.dongle_id
-      },
-    });
-
+    const segmentId = parseInt(segment, 10);
+    const driveSegment = await deviceController.getDriveSegment(driveIdentifier, segmentId);
     if (driveSegment) {
       isProcessed = driveSegment.is_processed;
       isStalled = driveSegment.is_stalled;
@@ -609,20 +603,8 @@ router.get('/drive/:dongleId/:driveIdentifier', requireAuthenticated, runAsyncWr
     directorySegments[`seg-${segment}`] = `<tr><td>${segment}</td><td>${qcamera}</td><td>${qlog}</td><td>${fcamera}</td><td>${rlog}</td><td>${dcamera}</td><td>${isProcessed}</td><td>${isStalled}</td></tr>`;
   }));
 
-  let qcamera = '--';
-  let fcamera = '--';
-  let dcamera = '--';
-  let qlog = '--';
-  let rlog = '--';
-  let isProcessed = '?';
-  let isStalled = '?';
-
   for (let i = 0; i <= drive.max_segment; i++) {
-    if (!directorySegments[`seg-${i}`]) {
-      response += `<tr><td>${i}</td><td>${qcamera}</td><td>${qlog}</td><td>${fcamera}</td><td>${rlog}</td><td>${dcamera}</td><td>${isProcessed}</td><td>${isStalled}</td></tr>`;
-    } else {
-      response += directorySegments[`seg-${i}`];
-    }
+    response += directorySegments[`seg-${i}`] || `<tr><td>${i}</td><td>--</td><td>--</td><td>--</td><td>--</td><td>--</td><td>?</td><td>?</td></tr>`;
   }
 
   response += `</table>
@@ -631,7 +613,7 @@ router.get('/drive/:dongleId/:driveIdentifier', requireAuthenticated, runAsyncWr
             <a href="/useradmin/signout">Sign Out</a></body></html>`;
 
   return res.status(200).send(response);
-}))
+}));
 
 // TODO: move to user admin api?
 router.get('/drive/:dongleId/:driveIdentifier/:action', requireAuthenticated, runAsyncWrapper(async (req, res) => {
