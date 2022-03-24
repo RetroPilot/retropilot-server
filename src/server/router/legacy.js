@@ -457,7 +457,7 @@ router.get('/useradmin/cabana_drive/:extendedRouteIdentifier', runAsyncWrapper(a
   const { extendedRouteIdentifier } = req.params;
   const [dongleId, dongleIdHashReq, driveIdentifier, driveIdentifierHashReq] = extendedRouteIdentifier.split('|');
 
-  const drive = await deviceController.getDrive(dongleId, driveIdentifier);
+  const drive = await deviceController.getDriveFromIdentifier(dongleId, driveIdentifier);
   if (!drive) {
     return res.status(404).json({ status: 'drive not found' });
   }

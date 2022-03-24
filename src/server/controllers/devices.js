@@ -209,14 +209,6 @@ async function getDrives(dongleId, includeDeleted, includeMeta) {
   return Drives.findAll(query);
 }
 
-async function getDrive(identifier) {
-  const drive = await Drives.findOne({ where: { identifier } });
-  if (!drive) {
-    return null;
-  }
-  return drive.dataValues;
-}
-
 async function getDriveFromIdentifier(dongleId, identifier) {
   return Drives.findOne({ where: { dongle_id: dongleId, identifier } });
 }
@@ -364,7 +356,6 @@ export default {
 
   // drive stuff, move maybe?
   getDrives,
-  getDrive,
   getBootlogs,
   getCrashlogs,
   getDriveFromIdentifier,

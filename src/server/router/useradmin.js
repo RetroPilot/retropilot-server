@@ -399,17 +399,20 @@ router.get('/drive/:dongleId/:driveIdentifier', requireAuthenticated, runAsyncWr
   const { dongleId } = req.params;
   const device = await deviceController.getDeviceFromDongleId(dongleId);
   if (!device) {
+    logger.debug('HTTP.DRIVE Device not found, dongleId:', dongleId);
     return res.status(404).send('Not Found.');
   }
 
   const { account_id: accountId } = device;
   if (accountId !== req.account.id) {
+    logger.debug('HTTP.DRIVE Account mismatch');
     return res.status(403).send('Forbidden.');
   }
 
   const { driveIdentifier } = req.params;
-  const drive = await deviceController.getDrive(dongleId, driveIdentifier);
-  if (drive == null) {
+  const drive = await deviceController.getDriveFromIdentifier(dongleId, driveIdentifier);
+  if (!drive) {
+    logger.debug('HTTP.DRIVE Drive not found, dongleId:', dongleId, 'driveIdentifier:', driveIdentifier);
     return res.status(404).send('Not Found.');
   }
 
@@ -621,7 +624,7 @@ router.get('/drive/:dongleId/:driveIdentifier/:action', requireAuthenticated, ru
     dongleId,
     driveIdentifier,
   } = req.params;
-  const drive = await deviceController.getDrive(dongleId, driveIdentifier);
+  const drive = await deviceController.getDriveFromIdentifier(dongleId, driveIdentifier);
   if (!drive) {
     return res.status(404).send('Not Found.');
   }
