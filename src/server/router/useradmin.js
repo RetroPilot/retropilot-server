@@ -110,7 +110,7 @@ router.post('/register/token', bodyParser.urlencoded({ extended: true }), runAsy
   }
 
   if (!process.env.ALLOW_REGISTRATION) {
-    return res.status(401).send('Unauthorized.');
+    return res.status(401).send('Unauthorised.');
   }
 
   const authAccount = await authenticationController.getAuthenticatedAccount(req);
@@ -181,7 +181,7 @@ router.post('/register/token', bodyParser.urlencoded({ extended: true }), runAsy
 
 router.get('/register', getAccount, runAsyncWrapper(async (req, res) => {
   if (!process.env.ALLOW_REGISTRATION) {
-    return res.status(401).send('Unauthorized.');
+    return res.status(401).send('Unauthorised.');
   }
 
   if (req.account) {
@@ -281,7 +281,7 @@ router.get('/device/:dongleId', requireAuthenticated, runAsyncWrapper(async (req
 
   const { account_id: accountId } = device;
   if (accountId !== req.account.id) {
-    return res.status(401).send('Unauthorized.');
+    return res.status(401).send('Unauthorised.');
   }
 
   const drives = await deviceController.getDrives(dongleId, false, true);

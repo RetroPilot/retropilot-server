@@ -323,11 +323,11 @@ async function updateOrCreateDriveSegment(dongleId, identifier, segmentId, data)
   });
 }
 
-async function getDriveSegment(driveName, segment) {
+async function getDriveSegment(driveIdentifier, segmentId) {
   return DriveSegments.findOne({
     where: {
-      segment_id: segment,
-      drive_identifier: driveName,
+      segment_id: segmentId,
+      drive_identifier: driveIdentifier,
     },
   });
 }
