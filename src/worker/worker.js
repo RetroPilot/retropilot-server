@@ -219,9 +219,7 @@ async function processSegmentsRecursive() {
 
         const driveSegmentResult = await DriveSegments.update({
           duration: Math.round(qcameraDuration),
-          distance_meters: Math.round(
-            Math.max(rlogTotalDistInternal, rlogTotalDistExternal) * 10,
-          ) / 10,
+          distance_meters: Math.round(Math.max(rlogTotalDistInternal, rlogTotalDistExternal)),
           is_processed: true,
           upload_complete: uploadComplete,
           is_stalled: false,
@@ -278,8 +276,8 @@ async function updateSegments() {
     const {
       id,
       created,
-        dongle_id: dongleId,
-        drive_identifier: driveIdentifier,
+      dongle_id: dongleId,
+      drive_identifier: driveIdentifier,
       is_processed: isProcessed,
       segment_id: segmentId,
     } = segment;
@@ -287,25 +285,25 @@ async function updateSegments() {
 
     const dongleIdHash = crypto.createHmac('sha256', process.env.APP_SALT)
       .update(dongleId)
-        .digest('hex');
-      const driveIdentifierHash = crypto.createHmac('sha256', process.env.APP_SALT)
-        .update(driveIdentifier)
-        .digest('hex');
+      .digest('hex');
+    const driveIdentifierHash = crypto.createHmac('sha256', process.env.APP_SALT)
+      .update(driveIdentifier)
+      .digest('hex');
 
-      const directoryTreePath = `${process.env.STORAGE_PATH}${dongleId}/${dongleIdHash}/${driveIdentifierHash}/${driveIdentifier}/${segmentId}`;
-      const directoryTree = dirTree(directoryTreePath);
+    const directoryTreePath = `${process.env.STORAGE_PATH}${dongleId}/${dongleIdHash}/${driveIdentifierHash}/${driveIdentifier}/${segmentId}`;
+    const directoryTree = dirTree(directoryTreePath);
 
-      if (!directoryTree || !directoryTree.children) {
-        logger.warn('updateSegments - missing directory', directoryTreePath);
-        return; // happens if upload in progress (db entity written but directory not yet created)
-      }
+    if (!directoryTree || !directoryTree.children) {
+      logger.warn('updateSegments - missing directory', directoryTreePath);
+      return; // happens if upload in progress (db entity written but directory not yet created)
+    }
 
-      // TODO: abstract this out
-      const SegmentFiles = {
-        fcamera: 'fcamera.hevc',
-        dcamera: 'dcamera.hevc',
-        qcamera: 'qcamera.ts',
-        qlog: 'qlog.bz2',
+    // TODO: abstract this out
+    const SegmentFiles = {
+      fcamera: 'fcamera.hevc',
+      dcamera: 'dcamera.hevc',
+      qcamera: 'qcamera.ts',
+      qlog: 'qlog.bz2',
       rlog: 'rlog.bz2',
     };
     const fileStatus = {
@@ -327,29 +325,29 @@ async function updateSegments() {
     logger.debug('updateSegments - uploadComplete', uploadComplete);
 
     if (fileStatus[SegmentFiles.qcamera] && fileStatus[SegmentFiles.rlog] && !isProcessed) {
-        // can process
-        logger.debug('updateSegments - can process', id);
-        segmentProcessQueue.push({
-          segment,
-          fileStatus,
-          uploadComplete,
-          driveIdentifier: `${dongleId}|${driveIdentifier}`,
-        });
-      } else if (uploadComplete) {
-        logger.info(`updateSegments uploadComplete for ${dongleId} ${driveIdentifier} ${segmentId}`);
+      // can process
+      logger.debug('updateSegments - can process', id);
+      segmentProcessQueue.push({
+        segment,
+        fileStatus,
+        uploadComplete,
+        driveIdentifier: `${dongleId}|${driveIdentifier}`,
+      });
+    } else if (uploadComplete) {
+      logger.info(`updateSegments uploadComplete for ${dongleId} ${driveIdentifier} ${segmentId}`);
 
-        await DriveSegments.update({
-          upload_complete: true,
-          is_stalled: false,
-        }, { where: { id } });
+      await DriveSegments.update({
+        upload_complete: true,
+        is_stalled: false,
+      }, { where: { id } });
 
-        affectedDrives[`${dongleId}|${driveIdentifier}`] = true;
-      } else if (Date.now() - created > 10 * 24 * 3600 * 1000) {
-        // ignore non-uploaded segments after 10 days until a new upload_url is requested (which resets is_stalled)
-        logger.warn(`updateSegments isStalled for ${dongleId} ${driveIdentifier} ${segmentId}`);
+      affectedDrives[`${dongleId}|${driveIdentifier}`] = true;
+    } else if (Date.now() - created > 10 * 24 * 3600 * 1000) {
+      // ignore non-uploaded segments after 10 days until a new upload_url is requested (which resets is_stalled)
+      logger.warn(`updateSegments isStalled for ${dongleId} ${driveIdentifier} ${segmentId}`);
 
-        await DriveSegments.update({
-          is_stalled: true,
+      await DriveSegments.update({
+        is_stalled: true,
       }, { where: { id } });
     }
   }));
