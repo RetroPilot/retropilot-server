@@ -383,12 +383,15 @@ async function upload(req, res) {
     logger.error('HTTP.UPLOAD_URL unable to match request, responding with HTTP 400');
     return res.status(400).send('Malformed Request.');
   }
-  return res.status(200).json({ url: responseUrl, headers: { 'Content-Type': 'application/octet-stream' } });
+  return res
+    .status(200)
+    .append('Content-Type', 'application/octet-stream')
+    .json({ url: responseUrl, headers: { 'Content-Type': 'application/octet-stream' } });
 }
 
 // DRIVE & BOOT/CRASH LOG FILE UPLOAD URL REQUEST
-router.get('/v1.3/:dongleId/upload_url', upload);
-router.get('/v1.4/:dongleId/upload_url', upload);
+router.get('/v1.3/:dongleId/upload_url', getDevice, upload);
+router.get('/v1.4/:dongleId/upload_url', getDevice, upload);
 
 // DEVICE REGISTRATION OR RE-ACTIVATION
 router.post('/v2/pilotauth/', bodyParser.urlencoded({ extended: true }), async (req, res) => {
