@@ -19,6 +19,6 @@ sequelize.options.logging = () => {};
  *          if their types have changed!
  *          Use sequelize-cli and migrations instead!
  */
-sequelize.sync({ force: process.env.DB_FORCE_SYNC });
+sequelize.sync({ force: process.env.DB_FORCE_SYNC === 'true' });
 
 export default sequelize;

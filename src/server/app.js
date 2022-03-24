@@ -6,6 +6,7 @@ import log4js from 'log4js';
 import storageController from './controllers/storage';
 import controllers from './controllers';
 import router from './router';
+import { Accounts, Devices, Drives } from '../models';
 
 const logger = log4js.getLogger();
 
@@ -21,6 +22,14 @@ const app = express();
 
 storageController.initializeStorage();
 tasks.push(storageController.updateTotalStorageUsed());
+
+// debug: print out some info from the database
+Promise.all([Accounts.findAll(), Devices.findAll(), Drives.findAll()])
+  .then(([accounts, devices, drives]) => {
+    logger.info(`Found ${accounts.length} accounts`);
+    logger.info(`Found ${devices.length} devices`);
+    logger.info(`Found ${drives.length} drives`);
+  });
 
 app.use(cors({
   origin: ['http://localhost:3000', 'https://connect.retropilot.org'],
