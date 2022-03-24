@@ -64,7 +64,7 @@ router.get('/signout', runAsyncWrapper(async (req, res) => {
 
 router.get('/', getAccount, runAsyncWrapper(async (req, res) => {
   const { account } = req;
-  if (account != null) {
+  if (account) {
     res.redirect('/useradmin/overview');
     return;
   }
@@ -114,16 +114,18 @@ router.post('/register/token', bodyParser.urlencoded({ extended: true }), runAsy
   }
 
   const authAccount = await authenticationController.getAuthenticatedAccount(req);
-  if (authAccount != null) {
+  if (authAccount) {
     return res.redirect('/useradmin/overview');
   }
 
   const account = await userController.getAccountFromEmail(email.trim().toLowerCase());
-  if (account != null) {
+  if (account) {
     return res.redirect(`/useradmin/register?status=${encodeURIComponent('Email is already registered')}`);
   }
 
-  const token = (process.env.NODE_ENV === 'development') ? 'verysecrettoken' : crypto.createHmac('sha256', process.env.APP_SALT).update(email.trim()).digest('hex');
+  const token = (process.env.NODE_ENV === 'development')
+    ? 'verysecrettoken'
+    : crypto.createHmac('sha256', process.env.APP_SALT).update(email.trim()).digest('hex');
 
   let infoText = '';
 
@@ -136,7 +138,7 @@ router.post('/register/token', bodyParser.urlencoded({ extended: true }), runAsy
   } else if (req.body.password !== req.body.password2 || req.body.password.length < 3) {
     infoText = 'The passwords you entered did not match or were shorter than 3 characters, please try again.<br><br>';
   } else {
-    let result = false;
+    let result;
 
     try {
       result = await userController._dirtyCreateAccount(
