@@ -7,6 +7,8 @@ import DriveSegments from './drive_segments.model';
 import Drives from './drives.model';
 import OAuthAccounts from './oauth_accounts.model';
 
+import orm from './orm';
+
 export {
   Accounts,
   AthenaActionLog,
@@ -17,3 +19,5 @@ export {
   Drives,
   OAuthAccounts,
 };
+
+export default orm;

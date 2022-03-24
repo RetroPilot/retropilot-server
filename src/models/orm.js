@@ -11,14 +11,4 @@ const sequelize = new Sequelize({
 
 sequelize.options.logging = () => {};
 
-/**
- * Synchronise the database (create new tables) to match the models defined
- * above.
- *
- * WARNING: If force is set, sequelize will delete columns and create new ones
- *          if their types have changed!
- *          Use sequelize-cli and migrations instead!
- */
-sequelize.sync({ force: process.env.DB_FORCE_SYNC === 'true' });
-
 export default sequelize;
