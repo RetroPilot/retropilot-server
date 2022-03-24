@@ -4,7 +4,7 @@ import worker from './worker';
 
 log4js.configure({
   appenders: { logfile: { type: 'file', filename: 'worker.log' }, out: { type: 'console' } },
-  categories: { default: { appenders: ['out', 'logfile'], level: 'info' } },
+  categories: { default: { appenders: ['out', 'logfile'], level: process.env.LOG_LEVEL || 'info' } },
 });
 
 process.on('unhandledRejection', (error, p) => {
@@ -13,7 +13,7 @@ process.on('unhandledRejection', (error, p) => {
   console.dir(error.stack);
 });
 
-const logger = log4js.getLogger();
+const logger = log4js.getLogger('index');
 
 // make sure bunzip2 is available
 try {

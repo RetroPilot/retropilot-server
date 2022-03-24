@@ -2,7 +2,7 @@ import path from 'path';
 import fs from 'fs';
 import log4js from 'log4js';
 
-const logger = log4js.getLogger();
+const logger = log4js.getLogger('storage');
 
 export function initializeStorage() {
   const verifiedPath = mkDirByPathSync(process.env.STORAGE_PATH, { isRelativeToScript: (process.env.STORAGE_PATH.indexOf('/') !== 0) });

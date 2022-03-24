@@ -14,7 +14,7 @@ import { Devices, Drives, DriveSegments } from '../models';
 import { affectedDevices, doCleanup } from './cleanup';
 import { initializeStorage } from './storage';
 
-const logger = log4js.getLogger();
+const logger = log4js.getLogger('worker');
 
 const startTime = Date.now();
 let lastCleaningTime = 0;
