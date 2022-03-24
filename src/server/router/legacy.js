@@ -44,7 +44,10 @@ router.put('/backend/post_upload', bodyParser.raw({
     logger.info(`HTTP.PUT /backend/post_upload BOOT or CRASH upload with filename: ${filename}, token: ${req.query.token}`);
   }
 
-  const token = crypto.createHmac('sha256', process.env.APP_SALT).update(dongleId + filename + directory + ts).digest('hex');
+  const token = crypto
+    .createHmac('sha256', process.env.APP_SALT)
+    .update(dongleId + filename + directory + ts)
+    .digest('hex');
   if (token !== req.query.token) {
     logger.error(`HTTP.PUT /backend/post_upload token mismatch (${token} vs ${req.query.token})`);
     return res.status(400).send('Malformed request');
@@ -265,7 +268,10 @@ async function upload(req, res) {
   let responseUrl = null;
   const ts = Date.now(); // we use this to make sure old URLs cannot be reused (timeout after 60min)
 
-  const dongleIdHash = crypto.createHmac('sha256', process.env.APP_SALT).update(dongleId).digest('hex');
+  const dongleIdHash = crypto
+    .createHmac('sha256', process.env.APP_SALT)
+    .update(dongleId)
+    .digest('hex');
 
   // boot log upload
 
@@ -283,7 +289,10 @@ async function upload(req, res) {
     // "boot-2021-04-12--01-45-30.bz" for example
     const directory = `${dongleId}/${dongleIdHash}/${uploadType}`;
 
-    const token = crypto.createHmac('sha256', process.env.APP_SALT).update(dongleId + filename + directory + ts).digest('hex');
+    const token = crypto
+      .createHmac('sha256', process.env.APP_SALT)
+      .update(dongleId + filename + directory + ts)
+      .digest('hex');
 
     responseUrl = `${process.env.BASE_UPLOAD_URL}?file=${filename}&dir=${directory}&dongleId=${dongleId}&ts=${ts}&token=${token}`;
     logger.info(`HTTP.UPLOAD_URL matched '${uploadType}' file upload, constructed responseUrl: ${responseUrl}`);
@@ -309,11 +318,17 @@ async function upload(req, res) {
         return res.status(400).send('Malformed Request.');
       }
 
-      const driveIdentifierHash = crypto.createHmac('sha256', process.env.APP_SALT).update(driveName).digest('hex');
+      const driveIdentifierHash = crypto
+        .createHmac('sha256', process.env.APP_SALT)
+        .update(driveName)
+        .digest('hex');
 
       directory = `${dongleId}/${dongleIdHash}/${driveIdentifierHash}/${directory}`;
 
-      const token = crypto.createHmac('sha256', process.env.APP_SALT).update(dongleId + filename + directory + ts).digest('hex');
+      const token = crypto
+        .createHmac('sha256', process.env.APP_SALT)
+        .update(dongleId + filename + directory + ts)
+        .digest('hex');
       responseUrl = `${process.env.BASE_UPLOAD_URL}?file=${filename}&dir=${directory}&dongleId=${dongleId}&ts=${ts}&token=${token}`;
       logger.info(`HTTP.UPLOAD_URL matched 'drive' file upload, constructed responseUrl: ${responseUrl}`);
 
@@ -325,7 +340,7 @@ async function upload(req, res) {
       logger.info('drive value', drive);
       logger.info('drive name:', driveName);
 
-      if (drive === undefined || drive === null) {
+      if (!drive) {
         logger.info('CREATING NEW DRIVE');
         // create a new drive
         const timeSplit = driveName.split('--');
@@ -379,7 +394,7 @@ async function upload(req, res) {
     }
   }
 
-  if (responseUrl == null) {
+  if (!responseUrl) {
     logger.error('HTTP.UPLOAD_URL unable to match request, responding with HTTP 400');
     return res.status(400).send('Malformed Request.');
   }
@@ -427,7 +442,9 @@ router.post('/v2/pilotauth/', bodyParser.urlencoded({ extended: true }), async (
     // TODO: rewrite without while (true) loop
     // eslint-disable-next-line no-constant-condition
     while (true) {
-      const dongleId = crypto.randomBytes(4).toString('hex');
+      const dongleId = crypto
+        .randomBytes(4)
+        .toString('hex');
       const isDongleIdTaken = await deviceController.getDeviceFromDongleId(dongleId);
       if (isDongleIdTaken) {
         continue;
@@ -465,8 +482,14 @@ router.get('/useradmin/cabana_drive/:extendedRouteIdentifier', runAsyncWrapper(a
     return res.status(404).json({ status: 'drive not found' });
   }
 
-  const dongleIdHash = crypto.createHmac('sha256', process.env.APP_SALT).update(drive.dongle_id).digest('hex');
-  const driveIdentifierHash = crypto.createHmac('sha256', process.env.APP_SALT).update(drive.identifier).digest('hex');
+  const dongleIdHash = crypto
+    .createHmac('sha256', process.env.APP_SALT)
+    .update(drive.dongle_id)
+    .digest('hex');
+  const driveIdentifierHash = crypto
+    .createHmac('sha256', process.env.APP_SALT)
+    .update(drive.identifier)
+    .digest('hex');
   const driveUrl = `${process.env.BASE_DRIVE_DOWNLOAD_URL + dongleId}/${dongleIdHash}/${driveIdentifierHash}/${driveIdentifier}`;
 
   if (dongleIdHash !== dongleIdHashReq || driveIdentifierHash !== driveIdentifierHashReq) {
