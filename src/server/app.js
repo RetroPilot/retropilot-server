@@ -17,8 +17,9 @@ export default async () => {
   const logger = log4js.getLogger();
   const app = express();
 
+  // TODO: move cors options to dotenv for development?
   app.use(cors({
-    origin: ['http://localhost:3000', 'https://connect.retropilot.org'],
+    origin: [process.env.BASE_URL, 'https://connect.retropilot.org', 'http://localhost:8080', 'http://localhost:3000'],
     credentials: true,
   }));
   app.use(cookieParser());
