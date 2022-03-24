@@ -15,6 +15,7 @@ export const requireAuthenticated = async (req, res, next) => {
     return;
   }
 
+  req.account = account;
   next();
 };
 
