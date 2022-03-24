@@ -90,9 +90,23 @@ router.get('/v1.1/devices/:dongleId/', runAsyncWrapper(async (req, res) => {
     return res.status(401).send('Unauthorized.');
   }
 
+  const PrimeType = {
+    None: 0,
+    Magenta: 1,
+    Lite: 2,
+  };
+
+  const isPaired = accountId !== 0;
   const response = {
-    is_paired: (accountId !== 0),
-    prime: (accountId > 0),
+    is_paired: isPaired,
+    /*
+     * Whether the account is subscribed to prime. Removed in OP 0.8.13. Replaced by `prime_type`.
+     */
+    prime: isPaired,
+    /*
+     * The type of prime subscription the account is subscribed to.
+     */
+    prime_type: isPaired ? PrimeType.Lite : PrimeType.None,
   };
   logger.info(`HTTP.DEVICES for ${dongleId} returning: ${JSON.stringify(response)}`);
 
