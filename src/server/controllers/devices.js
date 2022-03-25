@@ -73,7 +73,7 @@ async function pairDeviceToAccountId(dongleId, accountId) {
 }
 
 async function unpairDevice(dongleId, accountId) {
-  const device = await Devices.getOne(
+  const device = await Devices.findOne(
     { where: { account_id: accountId, dongle_id: dongleId } },
   );
 
@@ -89,7 +89,7 @@ async function unpairDevice(dongleId, accountId) {
 }
 
 async function setDeviceNickname(account, dongleId, nickname) {
-  const device = await Devices.getOne(
+  const device = await Devices.findOne(
     { where: { account_id: account.id, dongle_id: dongleId } },
   );
 

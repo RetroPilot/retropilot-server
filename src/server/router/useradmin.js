@@ -14,6 +14,7 @@ import mailingController from '../controllers/mailing';
 import deviceController from '../controllers/devices';
 import userController from '../controllers/users';
 import { getAccount } from '../middlewares/authentication';
+import { getDevice } from '../middlewares/devices';
 
 const logger = log4js.getLogger('useradmin');
 const router = express.Router();
@@ -207,6 +208,7 @@ router.get('/overview', requireAuthenticated, runAsyncWrapper(async (req, res) =
 
   let response = `<html style="font-family: monospace">
     <h2>Welcome To The RetroPilot Server Dashboard!</h2>
+    ${req.query.status ? `<dialog open>${htmlspecialchars(req.query.status)}</dialog>` : ''}
     <br><br>
     <h3>Account Overview</h3>
     <b>Account:</b> #${account.id}<br>
@@ -248,11 +250,26 @@ ${req.query.linkstatus !== undefined ? `<br><u>${htmlspecialchars(req.query.link
 }));
 
 // TODO: move to useradmin api
-router.get('/api/useradmin/unpair_device/:dongleId', requireAuthenticated, runAsyncWrapper(async (req, res) => {
-  // TODO: implement unpair_device?
-  return res.redirect('/useradmin/overview');
+router.get('/unpair_device/:dongleId', [requireAuthenticated, getDevice], runAsyncWrapper(async (req, res) => {
+  const { device } = req;
+  if (!device) {
+    return res.redirect(`/useradmin/overview?status=${encodeURIComponent('Device not found')}`);
+  }
+
+  if (device.account_id !== req.account.id) {
+    return res.redirect(`/useradmin/overview?status=${encodeURIComponent('Not authorized')}`);
+  }
+
+  const result = await deviceController.unpairDevice(device.dongle_id, req.account.id);
+  if (!result.success) {
+    logger.warn(`Failed to unpair device ${device.dongle_id} for account ${req.account.id}: ${result}`);
+    return res.redirect(`/useradmin/overview?status=${encodeURIComponent('An unknown error occurred')}`);
+  }
+
+  return res.redirect(`/useradmin/overview?status=${encodeURIComponent('Device unpaired successfully')}`);
 }));
 
+// TODO: move to useradmin api
 router.post('/pair_device', [requireAuthenticated, bodyParser.urlencoded({ extended: true })], runAsyncWrapper(async (req, res) => {
   const { account, body: { qrString } } = req;
 

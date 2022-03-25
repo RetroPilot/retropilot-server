@@ -5,6 +5,7 @@ import cookieParser from 'cookie-parser';
 import controllers from '../../controllers';
 import deviceController from '../../controllers/devices';
 import { requireAuthenticated } from '../../middlewares/authentication';
+import { getDevice } from '../../middlewares/devices';
 
 // TODO Remove this, pending on removing all auth logic from routes
 
@@ -74,10 +75,13 @@ router.get('/overview', requireAuthenticated, runAsyncWrapper(async (req, res) =
   });
 }));
 
-router.get('/unpair_device/:dongleId', requireAuthenticated, runAsyncWrapper(async (req, res) => {
-  const { account, params: { dongleId } } = req;
+router.get('/unpair_device/:dongleId', [requireAuthenticated, getDevice], runAsyncWrapper(async (req, res) => {
+  const {
+    account,
+    device,
+    params: { dongleId },
+  } = req;
 
-  const device = await deviceController.getDeviceFromDongleId(dongleId);
   if (!device) {
     return res.status(404).json({ success: false, msg: 'NOT_FOUND' });
   } else if (device.accountId !== account.id) {
