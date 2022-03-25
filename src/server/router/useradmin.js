@@ -82,7 +82,7 @@ router.get('/', getAccount, runAsyncWrapper(async (req, res) => {
     <h2>Welcome To The RetroPilot Server Dashboard!</h2>
     <br><br>
     <h3>Login</h3>
-    ${req.query.status !== undefined ? `<u>${htmlspecialchars(req.query.status)}</u><br>` : ''}
+    ${req.query.status ? `<u>${htmlspecialchars(req.query.status)}</u><br>` : ''}
     <form action="/useradmin/auth" method="POST">
         <input type="email" name="email" placeholder="Email" required>
         <input type="password" name="password" placeholder="Password" required>
@@ -236,7 +236,7 @@ router.get('/overview', requireAuthenticated, runAsyncWrapper(async (req, res) =
 <h3>Pair New Devices</h3>
 <i>* To pair a new device, first have it auto-register on this server.<br>Then scan the QR Code and paste the Device Token below.</i><br>
 ${req.query.linkstatus !== undefined ? `<br><u>${htmlspecialchars(req.query.linkstatus)}</u><br><br>` : ''}
-<form action="/api/useradmin/pair_device" method="POST">
+<form action="/useradmin/pair_device" method="POST">
 <input type="text" name="qrString" placeholder="QR Code Device Token" required>
 <input type="submit" value="Pair">
 </form>
@@ -249,7 +249,6 @@ ${req.query.linkstatus !== undefined ? `<br><u>${htmlspecialchars(req.query.link
   return res.status(200).send(response);
 }));
 
-// TODO: move to useradmin api
 router.get('/unpair_device/:dongleId', [requireAuthenticated, getDevice], runAsyncWrapper(async (req, res) => {
   const { device } = req;
   if (!device) {
@@ -269,7 +268,6 @@ router.get('/unpair_device/:dongleId', [requireAuthenticated, getDevice], runAsy
   return res.redirect(`/useradmin/overview?status=${encodeURIComponent('Device unpaired successfully')}`);
 }));
 
-// TODO: move to useradmin api
 router.post('/pair_device', [requireAuthenticated, bodyParser.urlencoded({ extended: true })], runAsyncWrapper(async (req, res) => {
   const { account, body: { qrString } } = req;
 
