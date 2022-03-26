@@ -2,7 +2,6 @@ import crypto from 'crypto';
 import dirTree from 'directory-tree';
 import log4js from 'log4js';
 import sanitizeFactory from 'sanitize';
-import { Op } from 'sequelize';
 
 import {
   Accounts,
