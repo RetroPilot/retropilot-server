@@ -4,7 +4,7 @@ on: [push, pull_request]
 
 jobs:
   test:
-    name: Run tests
+    name: Run linter and tests
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
@@ -19,7 +19,7 @@ jobs:
         run: npm test
 
   build:
-    name: Build
+    name: Build app
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
@@ -34,6 +34,9 @@ jobs:
   docker:
     name: Build Docker image
     runs-on: ubuntu-20.04
+    needs:
+      - test
+      - build
     steps:
       - uses: actions/checkout@v2
       - name: Docker meta
