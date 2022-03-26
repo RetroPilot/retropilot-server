@@ -1,10 +1,10 @@
-import { WebSocketServer } from 'ws';
 import cookie from 'cookie';
-import jsonwebtoken from 'jsonwebtoken';
-import httpsServer from 'https';
-import httpServer from 'http';
 import { readFileSync } from 'fs';
+import httpServer from 'http';
+import httpsServer from 'https';
+import jsonwebtoken from 'jsonwebtoken';
 import log4js from 'log4js';
+import { WebSocketServer } from 'ws';
 
 import { AthenaActionLog, AthenaReturnedData } from '../../../models';
 import deviceController from '../../controllers/devices';
@@ -12,7 +12,9 @@ import helperFunctions from './helpers';
 
 const logger = log4js.getLogger();
 
-let helpers;
+// TODO: I think we need to provide wss as a param here
+const helpers = helperFunctions();
+
 let wss;
 
 function __server() {
@@ -110,7 +112,6 @@ async function manageConnection(ws, res) {
 __server();
 
 wss.retropilotFunc = {
-
   findFromDongle: (dongleId) => {
     let websocket = null;
     wss.clients.forEach((value) => {
@@ -162,16 +163,18 @@ wss.retropilotFunc = {
     method, params, jsonrpc: '2.0', id,
   }),
 
-  /* eslint-disable camelcase */
-  actionLogger: async (account_id, device_id, action, user_ip, device_ip, meta, dongle_id) => {
+  actionLogger: async (accountId, deviceId, action, userIp, deviceIp, meta, dongleId) => {
     await AthenaActionLog.create({
-      account_id, device_id, action, user_ip, device_ip, meta, created_at: Date.now(), dongle_id,
+      account_id: accountId,
+      device_id: deviceId,
+      action,
+      user_ip: userIp,
+      device_ip: deviceIp,
+      meta,
+      created_at: Date.now(),
+      dongle_id: dongleId,
     });
   },
-  /* eslint-enable camelcase */
-
 };
-
-helpers = helperFunctions();
 
 export default helpers;

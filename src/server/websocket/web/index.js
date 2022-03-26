@@ -12,7 +12,6 @@ const logger = log4js.getLogger();
 
 let server;
 let wss;
-let controls;
 
 // eslint-disable-next-line no-underscore-dangle
 function __server() {
@@ -63,7 +62,6 @@ async function authenticateUser(ws, req) {
     return false;
   }
 
-  // eslint-disable-next-line no-param-reassign
   ws.account = account;
   return true;
 }
@@ -98,13 +96,7 @@ async function manageConnection(ws, req) {
   // ws.send(JSON.stringify(await commandBuilder('reboot')))
 }
 
-const websocketServer = __server();
-
-controls = controlsFunction(websocketServer);
+export const websocketServer = __server();
+export const controls = controlsFunction(websocketServer);
 
 athenaRealtime.realtimeCallback(controls);
-
-export default {
-  controls,
-  websocketServer,
-};
