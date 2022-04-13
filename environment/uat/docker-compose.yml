@@ -13,6 +13,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       # See traefik/traefik.toml for static config
       - ./traefik:/etc/traefik
+      - ./acme.json:/acme.json
 #    labels:
 #      - "traefik.enable=true"
 #      # Expose traefik dashboard at https://uat.traefik.retropilot.org
