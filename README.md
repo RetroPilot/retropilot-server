@@ -97,7 +97,24 @@ The athena websockets interface is not implemented yet, so the comma app and ath
 
 ## UAT
 
+Note that the first time you run the PostgreSQL container it will have to initialise.
+The server and worker cannot interact with it before this happens.
+
+Before first run:
+```
+cd environment/uat
+
+# Create the database
+docker-compose up db
+# CTRL-C when "database system is ready to accept connections" message appears
+
+# Allow the API program to initialise the database schema
+docker-compose up db api
+# CTRL-C when "RetroPilot Server listening at" message appears
+```
+
 Launch with:
 ```
-(cd environment/uat && docker-compose up -d)
+cd environment/uat
+docker-compose up -d
 ```

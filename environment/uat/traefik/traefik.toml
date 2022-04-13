@@ -23,10 +23,10 @@
     address = ":443"
 
 [certificatesResolvers]
-  [certificatesResolvers.myresolver]
-    [certificatesResolvers.myresolver.acme]
+  [certificatesResolvers.retropilot]
+    [certificatesResolvers.retropilot.acme]
       caServer = "https://acme-v02.api.letsencrypt.org/directory"
       email = "admin@retropilot.org"
       storage = "acme.json"
-      [certificatesResolvers.myresolver.acme.httpChallenge]
+      [certificatesResolvers.retropilot.acme.httpChallenge]
         entryPoint = "web"
