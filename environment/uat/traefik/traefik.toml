@@ -25,7 +25,7 @@
 [certificatesResolvers]
   [certificatesResolvers.myresolver]
     [certificatesResolvers.myresolver.acme]
-      caServer = "https://acme-staging-v02.api.letsencrypt.org/directory"
+      caServer = "https://acme-v02.api.letsencrypt.org/directory"
       email = "admin@retropilot.org"
       storage = "acme.json"
       [certificatesResolvers.myresolver.acme.httpChallenge]
