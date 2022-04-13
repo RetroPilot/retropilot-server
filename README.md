@@ -99,5 +99,5 @@ The athena websockets interface is not implemented yet, so the comma app and ath
 
 Launch with:
 ```
-docker-compose -f docker-compose.yml -f docker-compose.uat.yml up -d
+(cd environment/uat && docker-compose up -d)
 ```

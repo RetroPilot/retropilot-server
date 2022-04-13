@@ -1,0 +1,89 @@
+version: "3.0"
+
+services:
+  # Traefik reverse proxy
+  # https://doc.traefik.io/traefik/
+  reverse-proxy:
+    image: traefik:v2.6
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      # See traefik/traefik.toml for static config
+      - ./traefik:/etc/traefik
+#    labels:
+#      - "traefik.enable=true"
+#      # Expose traefik dashboard at https://uat.traefik.retropilot.org
+#      - "traefik.http.routers.dashboard.rule=Host(`uat.traefik.retropilot.org`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))"
+#      - "traefik.http.routers.dashboard.entrypoints=websecure"
+#      - "traefik.http.routers.dashboard.service=api@internal"
+#      - "traefik.http.routers.dashboard.tls=true"
+#      - "traefik.http.routers.dashboard.tls.certresolver=myresolver"
+#      # Secure the dashboard with BasicAuth middleware
+#      - "traefik.http.routers.dashboard.middlewares=dashboard-auth@docker"
+#      # BasicAuth: username=admin, password=password
+#      # Generate new password: sudo apt install -y apache2-utils; echo $(htpasswd -nB user) | sed -e s/\\$/\\$\\$/g
+#      - "traefik.http.middlewares.dashboard-auth.basicauth.users=admin:$$2y$$05$$iT4z7pjcdNRYU9Y89VlUUe.13TdQ9H7rBtIO6PJruuK.RAW8lvmxW"
+
+  # PostgreSQL database
+  db:
+    image: postgres:14-bullseye
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./database:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASS}
+      POSTGRES_DB: ${DB_NAME}
+
+  # API server
+  api:
+    # Use the retropilot-server image from the GitHub Container Registry
+    image: ghcr.io/retropilot/retropilot-server:uat
+    restart: unless-stopped
+    volumes:
+      # Mount realdata dir to /realdata in the container
+      - ./realdata:/realdata
+    env_file:
+      - .env
+    labels:
+      - "traefik.enable=true"
+      # API service forwards requests to container port 8080
+      - "traefik.http.services.api.loadbalancer.server.port=8080"
+      # Expose api at https://uat.api.retropilot.org
+      - "traefik.http.routers.api.rule=Host(`uat.api.retropilot.org`)"
+      - "traefik.http.routers.api.entrypoints=websecure"
+      - "traefik.http.routers.api.service=api@docker"
+      - "traefik.http.routers.api.tls=true"
+      - "traefik.http.routers.api.tls.certresolver=myresolver"
+#      # Athena service forwards requests to container port 4040
+#      - "traefik.http.services.athena.loadbalancer.server.port=4040"
+#      # Expose athena at https://uat.athena.retropilot.org
+#      - "traefik.http.routers.athena.rule=Host(`uat.athena.retropilot.org`)"
+#      - "traefik.http.routers.athena.entrypoints=websecure"
+#      - "traefik.http.routers.athena.service=athena@docker"
+#      - "traefik.http.routers.athena.tls=true"
+#      - "traefik.http.routers.athena.tls.certresolver=myresolver"
+
+  # API worker
+  worker:
+    # Use the same image as the server
+    image: ghcr.io/retropilot/retropilot-server:uat
+    # But run the worker script instead
+    command: npm run worker
+    restart: unless-stopped
+    volumes:
+      - ./realdata:/realdata
+    env_file:
+      - .env
+
+#  watchtower:
+#    # automatically update containers when new images are released
+#    image: containrrr/watchtower
+#    volumes:
+#      - /var/run/docker.sock:/var/run/docker.sock
+#    command: --interval 30
