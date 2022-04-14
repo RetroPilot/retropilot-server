@@ -1,0 +1,11 @@
+diff --git a/launch_openpilot.sh b/launch_openpilot.sh
+index 1525e1715..a58067926 100755
+--- a/launch_openpilot.sh
++++ b/launch_openpilot.sh
+@@ -1,5 +1,6 @@
+ #!/usr/bin/bash
+
+ export PASSIVE="0"
++export API_HOST="https://uat.api.retropilot.org"
+ exec ./launch_chffrplus.sh
+
