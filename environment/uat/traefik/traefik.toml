@@ -3,7 +3,6 @@
 
 [api]
   dashboard = true
-  insecure = true
 
 [log]
   level = "INFO"
