@@ -1,6 +1,6 @@
-# User Acceptance Testing (UAT) environnment
+# Development environment
 
-Hostname: `uat.api.retropilot.org`
+Test in docker containers on your development machine
 
 ## Usage
 
@@ -19,7 +19,7 @@ The server and worker cannot interact with it before this happens.
 
 Before first run:
 ```
-cd environment/uat
+cd environment/development
 
 # Create the database
 docker-compose up db
@@ -32,6 +32,6 @@ docker-compose up db api
 
 To start all the services:
 ```
-cd environment/uat
+cd environment/development
 docker-compose up -d
 ```

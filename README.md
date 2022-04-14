@@ -13,12 +13,13 @@ If you don't want to host your own instance, check out https://api.retropilot.or
 The server consists of 2 node scripts.
 
 - `src/server` is using expressjs and runs the backend (file upload / communication with openpilot) and the useradmin dashboard to manage / view / download drives & logs.
-
 - `src/worker` is a background worker that is processing drives (analyzing video files & logs) to prepare drives for playback in cabana and to gather statistics. It automatically terminates itself after 60 minutes to make sure the video/log libraries do not cause memory leaks.
 
 **Attention:** Minimum required node version is **node 10**.
 
 ### [Server] Installation
+
+TODO: write instructions for PostgreSQL database
 
 ```
 npm install
@@ -39,7 +40,8 @@ node -r esm src/worker
 
 
 ### [Server] CABANA Support
-A compiled version of a custom cabana fork (https://github.com/florianbrede-ayet/retropilot-cabana) is directly bundled in the `cabana/` subdirectory and will be served by the express app. After starting `index.js`, cabana is ready to use.
+
+A compiled version of a custom cabana fork (https://github.com/RetroPilot/cabana) is directly bundled in the `cabana/` subdirectory and will be served by the express app. After starting `index.js`, cabana is ready to use.
 
 -----
 
@@ -48,12 +50,16 @@ A compiled version of a custom cabana fork (https://github.com/florianbrede-ayet
 
 On the device or in your fork's code, replace all API endpoints with your own server endpoint. 
 This could be executed directly on the device in the shell to use `https://api.retropilot.org` as backend:
+
 ```
 find /data/openpilot -type f -exec sed -i 's/https:\/\/api.commadotai.com/https:\/\/api.retropilot.org/g' {} +
 ```
 
+TODO: add git patch instructions
+
 ### [Device] Swapping Servers (Back)
 To switch a device between different servers, you have to remove the old `DongleId` and reboot:
+
 ```
 rm /data/params/d/DongleID
 reboot
@@ -62,9 +68,9 @@ reboot
 There is no need to backup the `DongleId`, as the new server will identify your device based on its imei, serial and public key.
 
 ### [Device] Raw Drives Not Uploading (fcamera & rlog)
+
 1. Raw data is only uploaded if the device is sufficiently charged, not connected to an active panda (offroad) and there are no immediate files (boot, crash, qcamera, qlog) remaining.<br>
 2. Your branch might have raw uploads disabled, check *Device Settings > Upload Raw Logs*.
-
 
 If that doesn't help or the option is not available, try:
 
@@ -95,26 +101,6 @@ The athena websockets interface is not implemented yet, so the comma app and ath
 ![image](https://user-images.githubusercontent.com/48515354/118385084-37fb2200-b60c-11eb-8d3e-6db458827808.png)
 
 
-## UAT
+## Deployment
 
-Note that the first time you run the PostgreSQL container it will have to initialise.
-The server and worker cannot interact with it before this happens.
-
-Before first run:
-```
-cd environment/uat
-
-# Create the database
-docker-compose up db
-# CTRL-C when "database system is ready to accept connections" message appears
-
-# Allow the API program to initialise the database schema
-docker-compose up db api
-# CTRL-C when "RetroPilot Server listening at" message appears
-```
-
-Launch with:
-```
-cd environment/uat
-docker-compose up -d
-```
+For deployment instructions and configuration, take a look at the `environment` directory.

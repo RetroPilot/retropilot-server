@@ -3,7 +3,6 @@
 
 [api]
   dashboard = true
-  insecure = true
 
 [log]
   level = "INFO"
@@ -22,6 +21,8 @@
           to = "websecure"
   [entryPoints.websecure]
     address = ":443"
+  [entryPoints.dashboard]
+    address = ":8080"
 
 [certificatesResolvers]
   [certificatesResolvers.retropilot]

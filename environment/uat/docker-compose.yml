@@ -9,13 +9,19 @@ services:
     ports:
       - "80:80"
       - "443:443"
-      - "127.0.0.1:8080:8080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       # See traefik/traefik.toml for static config
       - ./traefik:/etc/traefik
     labels:
       - "traefik.enable=true"
+      # Expose traefik dashboard at http://localhost:8080
+      - "traefik.http.routers.dashboard.rule=Host(`localhost`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))"
+      - "traefik.http.routers.dashboard.entrypoints=dashboard"
+      - "traefik.http.routers.dashboard.service=api@internal"
+      # Secure the dashboard with IPWhiteList middleware
+      - "traefik.http.routers.dashboard.middlewares=dashboard-allowlist@docker"
+      - "traefik.http.middlewares.dashboard-allowlist.ipwhitelist.sourcerange=127.0.0.1/32"
 
   # PostgreSQL database
   db:
@@ -51,17 +57,17 @@ services:
       - "traefik.http.routers.api.tls=true"
       - "traefik.http.routers.api.tls.certresolver=retropilot"
 
+      # Athena service forwards requests to container port 4040
+      - "traefik.http.services.athena.loadbalancer.server.port=4040"
+      # Expose athena at https://uat.athena.retropilot.org
+      - "traefik.http.routers.athena.rule=Host(`athena.uat.retropilot.org`)"
+      - "traefik.http.routers.athena.entrypoints=websecure"
+      - "traefik.http.routers.athena.service=athena@docker"
+      - "traefik.http.routers.athena.tls=true"
+      - "traefik.http.routers.athena.tls.certresolver=retropilot"
+
       # Monitor for image updates and restart automatically
       - "com.centurylinklabs.watchtower.enable=true"
-
-#     # Athena service forwards requests to container port 4040
-#     - "traefik.http.services.athena.loadbalancer.server.port=4040"
-#     # Expose athena at https://uat.athena.retropilot.org
-#     - "traefik.http.routers.athena.rule=Host(`athena.uat.retropilot.org`)"
-#     - "traefik.http.routers.athena.entrypoints=websecure"
-#     - "traefik.http.routers.athena.service=athena@docker"
-#     - "traefik.http.routers.athena.tls=true"
-#     - "traefik.http.routers.athena.tls.certresolver=retropilot"
 
   # API worker
   worker:

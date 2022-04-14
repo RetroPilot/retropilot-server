@@ -1,0 +1,48 @@
+version: "3.0"
+services:
+  # PostgreSQL database
+  db:
+    image: postgres:14-bullseye
+    restart: always
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./database:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASS}
+      POSTGRES_DB: ${DB_NAME}
+
+  # API server
+  api:
+    build: ../..
+    restart: unless-stopped
+    depends_on:
+      - db
+    volumes:
+      - ./realdata:/realdata
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+
+  # API worker
+  worker:
+    build: ../..
+    command: npm run worker
+    restart: unless-stopped
+    depends_on:
+      - db
+    volumes:
+      - ./realdata:/realdata
+    env_file:
+      - .env
+
+  pgadmin:
+    image: dpage/pgadmin4
+    restart: unless-stopped
+    ports:
+      - "5050:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@retropilot.org
+      PGADMIN_DEFAULT_PASSWORD: ${DB_PASS}

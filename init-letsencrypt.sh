@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# NOTE: you don't need to run this script unless you are deploying without docker and traefik
+
 if ! [ -x "$(command -v docker-compose)" ]; then
   echo 'Error: docker-compose is not installed.' >&2
   exit 1

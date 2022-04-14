@@ -8,14 +8,13 @@
 node_modules/
 
 # Data
-realdata
 database
+realdata
 
 # Miscellaneous
 .DS_Store
 *.log
-.env*
-!.env*.sample
+.env
 
 # Build
 dist
