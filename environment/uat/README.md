@@ -1,11 +1,12 @@
-# User Acceptance Testing (UAT) environnment
+# User Acceptance Testing (UAT) environment
 
 Hostname: `uat.api.retropilot.org`
 
 ## Setup
 
 This setup assumes you have `docker` and `docker-compose` installed on your machine, and that you have added the
-relevant users to the `docker` group.
+relevant users to the `docker` group. Instructions given below are an example - you should look to the official
+documentation [here for Docker Engine](https://docs.docker.com/engine/install/) and [here for Docker Compose](https://docs.docker.com/compose/install/).
 
 ```sh
 # install docker and setup systemd to start it on boot
@@ -15,6 +16,17 @@ sudo systemctl enable docker
 
 # add $USER to the docker group
 sudo usermod -aG docker $USER
+
+# logout and back in to see the change
+
+# install docker compose v2 for all users
+DOCKER_CONFIG=/usr/local/lib/docker
+sudo mkdir -p $DOCKER_CONFIG/cli-plugins
+sudo curl -SL https://github.com/docker/compose/releases/download/v2.2.3/docker-compose-linux-x86_64 -o $DOCKER_CONFIG/cli-plugins/docker-compose
+sudo chmod +x $DOCKER_CONFIG/cli-plugins/docker-compose
+
+# test docker compose
+docker compose version
 ```
 
 Clone the Git repo to `/data/retropilot-server`. We can clone it using the `--shared` argument to allow multiple users
@@ -51,16 +63,16 @@ cd environment/uat
 cp .env.sample .env
 
 # create the database
-docker-compose up db
+docker compose up db
 # CTRL-C when "database system is ready to accept connections" message appears
 
 # allow the API to initialise the database schema
-docker-compose up db api
+docker compose up db api
 # CTRL-C when "RetroPilot Server listening at" message appears
 ```
 
 To start all the services:
-```
+```sh
 cd environment/uat
-docker-compose up -d
+docker compose up -d
 ```
