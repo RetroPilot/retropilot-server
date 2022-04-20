@@ -39,7 +39,7 @@ services:
   # API server
   api:
     # Use the retropilot-server image from the GitHub Container Registry
-    image: ghcr.io/retropilot/retropilot-server:uat
+    image: ghcr.io/retropilot/retropilot-server:main
     restart: unless-stopped
     volumes:
       # Mount realdata dir to /realdata in the container
@@ -51,7 +51,7 @@ services:
       # API service forwards requests to container port 8080
       - "traefik.http.services.api.loadbalancer.server.port=8080"
       # Expose api at https://uat.api.retropilot.org
-      - "traefik.http.routers.api.rule=Host(`uat.api.retropilot.org`) || Host(`uat.api.retropilot.org`)"
+      - "traefik.http.routers.api.rule=Host(`uat.api.retropilot.org`)"
       - "traefik.http.routers.api.entrypoints=websecure"
       - "traefik.http.routers.api.service=api@docker"
       - "traefik.http.routers.api.tls=true"
@@ -63,7 +63,7 @@ services:
   # API worker
   worker:
     # Use the same image as the server
-    image: ghcr.io/retropilot/retropilot-server:uat
+    image: ghcr.io/retropilot/retropilot-server:main
     # But run the worker script instead
     command: npm run worker
     restart: unless-stopped
