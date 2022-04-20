@@ -50,8 +50,8 @@ services:
       - "traefik.enable=true"
       # API service forwards requests to container port 8080
       - "traefik.http.services.api.loadbalancer.server.port=8080"
-      # Expose api at https://api.uat.retropilot.org and https://uat.api.retropilot.org
-      - "traefik.http.routers.api.rule=Host(`api.uat.retropilot.org`) || Host(`uat.api.retropilot.org`)"
+      # Expose api at https://uat.api.retropilot.org
+      - "traefik.http.routers.api.rule=Host(`uat.api.retropilot.org`) || Host(`uat.api.retropilot.org`)"
       - "traefik.http.routers.api.entrypoints=websecure"
       - "traefik.http.routers.api.service=api@docker"
       - "traefik.http.routers.api.tls=true"
