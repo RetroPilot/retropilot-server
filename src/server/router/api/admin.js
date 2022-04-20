@@ -95,10 +95,4 @@ router.get('/device/:dongle_id/ignore/:ignore_uploads', runAsyncWrapper(async (r
   return res.status(200).json({ success: true });
 }));
 
-router.get('/device/:dongle_id/athena/reboot', runAsyncWrapper(async (req, res) => {
-  const { dongle_id: dongleId } = req.params;
-  req.athenaWebsocketTemp.rebootDevice(dongleId);
-  res.send('ok');
-}));
-
 export default router;
