@@ -1,6 +1,6 @@
 # User Acceptance Testing (UAT) environment
 
-Hostname: `api.uat.retropilot.org`
+Hostname: `uat.api.retropilot.org`
 
 ## Setup
 
