@@ -123,8 +123,8 @@ async function deleteOverQuotaDrives() {
         dongle_id: dongleId,
         is_deleted: false,
         is_preserved: false,
-        order: [['created', 'ASC']],
       },
+      order: [['created', 'ASC']],
     });
 
     if (drive) {
