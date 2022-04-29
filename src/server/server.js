@@ -21,11 +21,18 @@ export default async () => {
    * Synchronise the database (create new tables) to match the models defined
    * above.
    *
+   * This checks what is the current state of the table in the database (which
+   * columns it has, what are their data types, etc), and then performs the
+   * necessary changes in the table to make it match the model.
+   *
    * WARNING: If force is set, sequelize will delete columns and create new ones
    *          if their types have changed!
    *          Use sequelize-cli and migrations instead!
    */
-  const options = { force: process.env.DB_FORCE_SYNC === 'true' };
+  const options = {
+    alter: true,
+    force: process.env.DB_FORCE_SYNC === 'true',
+  };
   await orm.sync(options);
   logger.info('Database synced', options);
 
