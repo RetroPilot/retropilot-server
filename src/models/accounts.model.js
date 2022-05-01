@@ -45,6 +45,11 @@ const Accounts = sequelize.define('accounts', {
     allowNull: true,
     type: DataTypes.BOOLEAN,
   },
+  research_enabled: {
+    allowNull: false,
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+  },
 }, {
   timestamps: false,
 });

@@ -214,7 +214,30 @@ router.get('/overview', requireAuthenticated, runAsyncWrapper(async (req, res) =
     <b>Account:</b> #${account.id}<br>
     <b>Email:</b> ${account.email}<br>
     <b>Created:</b> ${helperController.formatDate(account.created)}<br><br>
+    <b>User Settings</b>
+    <br>
+    <input type="checkbox" id="share-data" name="sharedata"
+    checked>
+<label for="scales">Share drives for community model development</label><br>
+      <script>
+      const selectElement = document.querySelector('#share-data');
+          fetch('/api/user/settings/research')
+    .then(response => response.json())
+    .then((data) => {
+      if (data.success) {
+        selectElement.checked = data.data.research_enabled
+      }
+    });
+selectElement.addEventListener('change', (event) => {
+  fetch('/api/user/settings/research/'+event.target.checked, {
+  method: 'PATCH'})
+});
+          </script>
+          <br><br>
+
     <b>Devices:</b><br>
+
+
     <table border=1 cellpadding=2 cellspacing=2>
         <tr><th>dongle_id</th><th>device_type</th><th>created</th><th>last_ping</th><th>storage_used</th></tr>
 `;
@@ -229,6 +252,8 @@ router.get('/overview', requireAuthenticated, runAsyncWrapper(async (req, res) =
     <td>${device.storage_used} MB</td>
 </tr>`;
   });
+
+
 
   response += `</table>
 <br>
