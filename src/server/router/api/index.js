@@ -1,5 +1,4 @@
 import express from 'express';
-import log4js from 'log4js';
 
 import admin from './admin';
 import auth from './auth';

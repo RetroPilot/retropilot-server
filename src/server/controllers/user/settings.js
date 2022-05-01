@@ -7,8 +7,7 @@ export async function SetResearchStatus(userId, status) {
 }
 
 export async function GetResearchStatus(userId) {
-    return Accounts.findOne({where: {id: userId}, attributes: ['research_enabled']})
+  return Accounts.findOne({ where: { id: userId }, attributes: ['research_enabled'] });
 }
-
 
 export default null;

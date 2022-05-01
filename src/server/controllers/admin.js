@@ -1,4 +1,3 @@
-
 import authentication from './authentication';
 import { Accounts } from '../../models';
 
