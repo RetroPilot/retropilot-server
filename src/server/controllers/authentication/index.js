@@ -67,6 +67,8 @@ async function changePassword(account, newPassword, oldPassword) {
 async function getAuthenticatedAccount(req) {
   const sessionJWT = req.cookies.jwt;
   if ((!sessionJWT || sessionJWT.expires <= Date.now())) {
+    console.log('Authentication - expired JWT session provided', sessionJWT);
+
     return null;
   }
 
@@ -75,14 +77,18 @@ async function getAuthenticatedAccount(req) {
 
 async function getAccountFromJWT(jwt, limitData = true) {
   let token;
+  console.log(jwt);
 
   try {
     token = jsonwebtoken.verify(jwt, process.env.APP_SALT);
   } catch (err) {
+    console.log(jwt, 'bad jwt');
     return null;// {success: false, msg: 'BAD_JWT'}
   }
 
   if (!token || !token.accountId) {
+    console.log(jwt, 'bad token');
+
     return null; // {success: false, badToken: true}
   }
 
@@ -97,6 +103,8 @@ async function getAccountFromJWT(jwt, limitData = true) {
 
   const account = await Accounts.findOne(query);
   if (!account || !account.dataValues) {
+    console.log(jwt, 'invalid');
+
     return null; // {success: false, isInvalid: true}
   }
 
@@ -110,6 +118,8 @@ async function getAccountFromJWT(jwt, limitData = true) {
   }
 
   if (!account || account.banned) {
+    console.log(jwt, 'banned');
+
     return null; // {success: false, isBanned: true}
   }
   return account;

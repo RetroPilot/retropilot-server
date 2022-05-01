@@ -49,6 +49,7 @@
     "sanitize": "^2.1.0",
     "sequelize": "^6.17.0",
     "simple-oauth2": "^4.3.0",
+    "spm-agent-nodejs": "^4.1.4",
     "sqlite": "^4.0.25",
     "sqlite3": "^5.0.2",
     "supertest": "^6.2.2",

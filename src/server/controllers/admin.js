@@ -1,4 +1,3 @@
-// TODO move everythijng away from this dumb intertwined style
 
 import authentication from './authentication';
 import { Accounts } from '../../models';
