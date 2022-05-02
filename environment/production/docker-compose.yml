@@ -9,6 +9,10 @@ services:
     ports:
       - "80:80"
       - "443:443"
+    logging:
+      options:
+        max-size: "200k"
+        max-file: "10"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       # See traefik/traefik.toml for static config
@@ -28,6 +32,8 @@ services:
     # Use the retropilot-server image from the GitHub Container Registry
     image: ghcr.io/retropilot/retropilot-server:production
     restart: unless-stopped
+    logging:
+      driver: none
     volumes:
       # Mount dir to /realdata in the container
       - /home/retro-data/prod:/realdata
@@ -54,6 +60,8 @@ services:
     # But run the worker script instead
     command: npm run worker
     restart: unless-stopped
+    logging:
+      driver: none
     volumes:
       - /home/retro-data/prod:/realdata
     env_file:
@@ -65,6 +73,10 @@ services:
   watchtower:
     # automatically update containers when new images are released
     image: containrrr/watchtower
+    logging:
+      options:
+        max-size: "200k"
+        max-file: "10"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     command: --interval 30 --label-enable
