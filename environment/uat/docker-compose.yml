@@ -41,6 +41,8 @@ services:
     # Use the retropilot-server image from the GitHub Container Registry
     image: ghcr.io/retropilot/retropilot-server:main
     restart: unless-stopped
+    logging:
+      driver: none
     volumes:
       # Mount realdata dir to /realdata in the container
       - ./realdata:/realdata
@@ -67,6 +69,8 @@ services:
     # But run the worker script instead
     command: npm run worker
     restart: unless-stopped
+    logging:
+      driver: none
     volumes:
       - ./realdata:/realdata
     env_file:
