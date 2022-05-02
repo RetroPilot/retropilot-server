@@ -29,8 +29,8 @@ services:
     image: ghcr.io/retropilot/retropilot-server:production
     restart: unless-stopped
     volumes:
-      # Mount realdata dir to /realdata in the container
-      - ./realdata:/realdata
+      # Mount dir to /realdata in the container
+      - /home/retro-data/prod:/realdata
     env_file:
       - .env
     labels:
@@ -55,7 +55,7 @@ services:
     command: npm run worker
     restart: unless-stopped
     volumes:
-      - ./realdata:/realdata
+      - /home/retro-data/prod:/realdata
     env_file:
       - .env
     labels:
