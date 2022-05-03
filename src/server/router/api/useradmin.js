@@ -120,18 +120,4 @@ router.post('/pair_device', [requireAuthenticated, bodyParser.urlencoded({ exten
   });
 }));
 
-router.post('/password/change', [requireAuthenticated, bodyParser.urlencoded({ extended: true })], runAsyncWrapper(async (req, res) => {
-  const { account, body: { oldPassword, newPassword } } = req;
-  const result = await controllers.authentication.changePassword(
-    account,
-    newPassword,
-    oldPassword,
-  );
-  if (!result.success) {
-    return res.status(result.status).json(result);
-  }
-
-  return res.json({ success: true });
-}));
-
 export default router;

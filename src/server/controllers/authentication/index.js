@@ -46,8 +46,11 @@ async function changePassword(account, newPassword, oldPassword) {
     return { success: false, code: 400, error: 'MISSING_DATA' };
   }
 
+  const acc = await Accounts.findOne({ where: { id: account.id }, attributes: ['password'] });
+
   const oldPasswordHash = crypto.createHash('sha256').update(oldPassword + process.env.APP_SALT).digest('hex');
-  if (account.password !== oldPasswordHash) {
+
+  if (acc.password !== oldPasswordHash) {
     return { success: false, code: 400, msg: 'BAD_PASSWORD' };
   }
 

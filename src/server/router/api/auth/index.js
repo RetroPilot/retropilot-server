@@ -72,6 +72,20 @@ router.post('/register/verify', bodyParser.urlencoded({ extended: true }), async
   return res.status(500).json({ success: false, msg: 'contact server admin' });
 });
 
+router.put('/account/password', [requireAuthenticated, bodyParser.urlencoded({ extended: true })], async (req, res) => {
+  const { account, body: { oldPassword, newPassword } } = req;
+  const result = await authenticationController.changePassword(
+    account,
+    newPassword,
+    oldPassword,
+  );
+  if (!result.success) {
+    return res.json(result);
+  }
+
+  return res.json({ success: true });
+});
+
 // router.get('/session/get', async (req, res) => {
 //   const account = await authenticationController.getAuthenticatedAccount(req);
 //

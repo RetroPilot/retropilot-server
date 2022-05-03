@@ -13,7 +13,7 @@ router.patch('/research/:enabled', requireAuthenticated, async (req, res) => {
 
   await SetResearchStatus(req.account.id, doEnable);
 
-  return res.json({ success: true, data: req.account });
+  return res.json({ success: true });
 });
 
 router.get('/research/', requireAuthenticated, async (req, res) => {
