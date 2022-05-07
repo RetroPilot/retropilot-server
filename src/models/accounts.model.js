@@ -50,6 +50,10 @@ const Accounts = sequelize.define('accounts', {
     type: DataTypes.BOOLEAN,
     defaultValue: false,
   },
+  settings: {
+    allowNull: true,
+    type: DataTypes.JSON,
+  },
 }, {
   timestamps: false,
 });

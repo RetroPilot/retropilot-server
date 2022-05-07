@@ -519,6 +519,7 @@ async function updateDrives() {
 
 async function mainWorkerLoop() {
   if (Date.now() - startTime > 60 * 60 * 1000) {
+    // 💀
     logger.info('EXIT WORKER AFTER 1 HOUR TO PREVENT MEMORY LEAKS...');
     process.exit();
     return;
