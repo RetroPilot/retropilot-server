@@ -69,6 +69,10 @@ const Drives = sequelize.define('drives', {
     allowNull: true,
     type: DataTypes.TEXT,
   },
+  git_origin: {
+    allowNull: true,
+    type: DataTypes.TEXT,
+  },
 }, {
   timestamps: false,
 });

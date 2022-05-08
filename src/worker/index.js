@@ -1,5 +1,7 @@
 import log4js from 'log4js';
 
+import segmentProcessor from './rework/segment';
+
 import worker from './worker';
 
 log4js.configure({
@@ -21,6 +23,12 @@ try {
 } catch (exception) {
   logger.error('bunzip2 is not installed or not available in environment path');
   process.exit();
+}
+
+try {
+  segmentProcessor();
+} catch (err) {
+  logger.error('experimental individual segment processor crashed', err);
 }
 
 worker();

@@ -3,11 +3,14 @@ import crypto from 'crypto';
 import express from 'express';
 import log4js from 'log4js';
 
+import Queue from 'bull';
 import { validateJWT } from '../controllers/authentication';
 import deviceController from '../controllers/devices';
 import storageController from '../controllers/storage';
 import { getAccountFromId } from '../controllers/users';
 import { getDevice } from '../middlewares/devices';
+
+const segmentQueue = new Queue('new_segment', process.env.REDIS_SERVER);
 
 const logger = log4js.getLogger();
 const router = express.Router();
@@ -54,13 +57,26 @@ router.put('/backend/post_upload', bodyParser.raw({
   }
 
   logger.info('HTTP.PUT /backend/post_upload permissions checked, calling moveUploadedFile');
-  const moveResult = storageController.moveUploadedFile(buf, directory, filename);
-  if (!moveResult) {
-    logger.error('HTTP.PUT /backend/post_upload moveUploadedFile failed');
-    return res.status(500).send('Internal Server Error');
+  // TODO Remove this, just for testing
+  // const moveResult = storageController.moveUploadedFile(buf, directory, filename);
+  // if (!moveResult) {
+  //  logger.error('HTTP.PUT /backend/post_upload moveUploadedFile failed');
+  //  return res.status(500).send('Internal Server Error');
+  // }
+
+  if (isDriveFile) {
+    segmentQueue.add({
+      segment: true,
+      segmentData: {
+        dir: directory,
+        dongleId,
+        file: filename,
+        ts,
+      },
+    });
   }
 
-  logger.info(`HTTP.PUT /backend/post_upload successfully uploaded to ${moveResult}`);
+  logger.info(`HTTP.PUT /backend/post_upload successfully uploaded to ${'moveResult'}`);
   return res.status(200).json(['OK']);
 }));
 
@@ -256,7 +272,8 @@ async function upload(req, res) {
       .catch((err) => logger.error(err))
     : null;
 
-  if ((!decoded || decoded.identity !== dongleId)) {
+  // Bypasses authentication when NODE_ENV is set to development
+  if ((!decoded || decoded.identity !== dongleId) && process.env.NODE_ENV !== 'development') {
     logger.info(`HTTP.UPLOAD_URL JWT authorization failed, token: ${authorization} device: ${JSON.stringify(device)}, decoded: ${JSON.stringify(decoded)}`);
     return res.status(403).send('Forbidden.');
   }

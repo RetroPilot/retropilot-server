@@ -22,6 +22,7 @@
     "@sendgrid/client": "^7.6.2",
     "2fa-util": "^1.1.1",
     "body-parser": "^1.19.2",
+    "bull": "^4.8.2",
     "chai": "^4.3.6",
     "chai-http": "^4.3.0",
     "cookie": "^0.4.2",
