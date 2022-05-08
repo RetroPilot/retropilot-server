@@ -1,7 +1,6 @@
 import log4js from 'log4js';
 
 import segmentProcessor from './rework/segment';
-
 import worker from './worker';
 
 log4js.configure({

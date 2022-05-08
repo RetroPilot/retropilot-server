@@ -57,12 +57,11 @@ router.put('/backend/post_upload', bodyParser.raw({
   }
 
   logger.info('HTTP.PUT /backend/post_upload permissions checked, calling moveUploadedFile');
-  // TODO Remove this, just for testing
-  // const moveResult = storageController.moveUploadedFile(buf, directory, filename);
-  // if (!moveResult) {
-  //  logger.error('HTTP.PUT /backend/post_upload moveUploadedFile failed');
-  //  return res.status(500).send('Internal Server Error');
-  // }
+  const moveResult = storageController.moveUploadedFile(buf, directory, filename);
+  if (!moveResult) {
+    logger.error('HTTP.PUT /backend/post_upload moveUploadedFile failed');
+    return res.status(500).send('Internal Server Error');
+  }
 
   if (isDriveFile) {
     segmentQueue.add({
