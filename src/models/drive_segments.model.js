@@ -49,6 +49,10 @@ const DriveSegments = sequelize.define('drive_segments', {
     allowNull: true,
     type: DataTypes.INTEGER,
   },
+  sensitive: {
+    allowNull: false,
+    type: DataTypes.BOOLEAN,
+  },
 }, {
   timestamps: false,
 });

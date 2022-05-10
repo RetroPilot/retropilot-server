@@ -1,11 +1,20 @@
 import * as yup from 'yup';
 import { Accounts } from '../../../models';
 
+const sensitiveAreaSchema = yup.object().shape({
+  lat: yup.number(),
+  long: yup.number(),
+  name: yup.string().optional(),
+}).noUnknown(true)
+  .required()
+  .strict();
+
 const settingsSchema = yup.object().shape({
   email: yup.string().email(),
   forkMaintainerShare: yup.bool(),
   acceptUploads: yup.bool(),
   marketingConsent: yup.bool(),
+  sensitiveAreas: yup.array().of(sensitiveAreaSchema),
 }).noUnknown(true)
   .required()
   .strict();

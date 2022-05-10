@@ -54,6 +54,10 @@ const Accounts = sequelize.define('accounts', {
     allowNull: true,
     type: DataTypes.JSON,
   },
+  sensitive_areas: {
+    allowNull: true,
+    type: DataTypes.JSON,
+  },
 }, {
   timestamps: false,
 });

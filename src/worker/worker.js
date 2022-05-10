@@ -68,13 +68,15 @@ function processSegmentRLog(rLogPath) {
     const temporaryFile = rLogPath.replace('.bz2', '');
 
     try {
+      // TODO ensure path is located within realdata
       execSync(`bunzip2 -k -f "${rLogPath}"`);
-    } catch (exception) { // if bunzip2 fails, something was wrong with the file (corrupt / missing)
-      logger.error(exception);
+    } catch (exception) {
+      // if bunzip2 fails, something was wrong with the file (corrupt / missing)
+      logger.error('Failed to run bunzip2.', exception, rLogPath);
       try {
         fs.unlinkSync(temporaryFile);
-        // eslint-disable-next-line no-empty
       } catch (ignored) {
+        logger.error('Failed to unlink temoprary file', exception, rLogPath);
       }
       resolve();
       return;
