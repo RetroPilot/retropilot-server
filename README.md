@@ -104,3 +104,6 @@ The athena websockets interface is not implemented yet, so the comma app and ath
 ## Deployment
 
 For deployment instructions and configuration, take a look at the `environment` directory.
+
+### Code of Conduct
+https://github.com/RetroPilot/.github/blob/main/profile/CODE_OF_CONDUCT
