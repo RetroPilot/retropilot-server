@@ -5,6 +5,7 @@
 
 node_modules/
 .next/
+.swc/
 
 package-lock.json
 
