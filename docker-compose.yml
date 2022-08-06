@@ -1,0 +1,13 @@
+version: "3.0"
+services:
+  db:
+    image: postgres
+    restart: always
+    ports:
+      - '5438:5432'
+    volumes:
+      - ./sql/schema.sql:/docker-entrypoint-initdb.d/create_tables.sql
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: retropilot

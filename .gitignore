@@ -1,0 +1,17 @@
+.idea
+.vscode
+*.swp
+*.swo
+
+node_modules/
+.next/
+
+package-lock.json
+
+.DS_Store
+*.log
+
+.env
+
+realdata
+database
