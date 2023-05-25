@@ -4,8 +4,7 @@ import express from 'express';
 import log4js from 'log4js';
 
 import Queue from 'bull';
-import { getAccountFromJWT, validateJWT } from '../controllers/authentication';
-import authenticationController from '../controllers/authentication';
+import { getAccountFromJWT, validateJWT, signIn } from '../controllers/authentication';
 import deviceController from '../controllers/devices';
 import storageController from '../controllers/storage';
 import { getAccountFromId, getAccountFromEmail } from '../controllers/users';
@@ -30,7 +29,7 @@ function runAsyncWrapper(callback) {
 router.post('/auth/login', bodyParser.raw({ type: 'application/json' }), async (req, res) => {
   const { email, password } = JSON.parse(req.body.toString());
   logger.debug('email: ', email, ' password: ', password);
-  const login = await authenticationController.signIn(email, password);
+  const login = await signIn(email, password);
   if (!login.success) {
     return res.status(401).json(login);
   }
