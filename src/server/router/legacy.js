@@ -34,7 +34,7 @@ router.post('/auth/login', bodyParser.raw({ type: 'application/json' }), async (
     return res.status(401).json(login);
   }
 
-  const account = await getAccountFromJWT(login.jwt);
+  const account = await authenticationController.getAccountFromJWT(login.jwt);
 
   return res.status(200).json({
     success: true,
@@ -53,7 +53,7 @@ router.post('/auth/register', bodyParser.raw({ type: 'application/json' }), asyn
     return res.status(400).json({ success: false, msg: 'malformed request' });
   }
 
-  const account = authenticationController.getAccountFromEmail(email);
+  const account = getAccountFromEmail(email);
 
   if (account) {
     logger.info('Account Exists');
