@@ -46,7 +46,7 @@ router.post('/auth/login', bodyParser.raw({ type: 'application/json' }), async (
 });
 
 router.post('/auth/register', bodyParser.raw({ type: 'application/json' }), async (req, res) => {
-  const { email, password } = JSON.parse(req.body.toString());
+  const { email } = JSON.parse(req.body.toString());
   if (!email) {
     // FIXME: use logger.warn
     console.error('/auth/register/ - Malformed Request!');
