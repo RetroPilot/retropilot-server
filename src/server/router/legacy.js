@@ -4,7 +4,7 @@ import express from 'express';
 import log4js from 'log4js';
 
 import Queue from 'bull';
-import { authenticationController, validateJWT } from '../controllers/authentication';
+import { getAccountFromJWT, validateJWT } from '../controllers/authentication';
 import deviceController from '../controllers/devices';
 import storageController from '../controllers/storage';
 import { getAccountFromId, getAccountFromEmail } from '../controllers/users';
@@ -28,13 +28,13 @@ function runAsyncWrapper(callback) {
 
 router.post('/auth/login', bodyParser.raw({ type: 'application/json' }), async (req, res) => {
   const { email, password } = JSON.parse(req.body.toString());
-  logger.debug('email: ',email,' password: ',password);
+  logger.debug('email: ', email, ' password: ', password);
   const login = await authenticationController.signIn(email, password);
   if (!login.success) {
     return res.status(401).json(login);
   }
 
-  const account = await authenticationController.getAccountFromJWT(login.jwt);
+  const account = await getAccountFromJWT(login.jwt);
 
   return res.status(200).json({
     success: true,
@@ -56,7 +56,7 @@ router.post('/auth/register', bodyParser.raw({ type: 'application/json' }), asyn
   const account = getAccountFromEmail(email);
 
   if (account) {
-    logger.info("Account Exists");
+    logger.info('Account Exists');
     return res.status(202).json(['OK']);
   }
 
@@ -67,16 +67,15 @@ router.post('/auth/register', bodyParser.raw({ type: 'application/json' }), asyn
   return res.status(500).json({ success: false, msg: 'contact server admin' });
 });
 
-//router.get('/auth/sts', runAsyncWrapper(async (req, res) => {
+// router.get('/auth/sts', runAsyncWrapper(async (req, res) => {
 
-//AppID 004f072c6a16bea0000000003
-//Key K004japAKTpEbzWem54+ZM+ISMeVz3A
+// AppID 004f072c6a16bea0000000003
+// Key K004japAKTpEbzWem54+ZM+ISMeVz3A
 
 //  return res.status(200).json({
 
-//  });
-//}));
-
+//   });
+// }));
 
 
 // DRIVE & BOOT/CRASH LOG FILE UPLOAD HANDLING
