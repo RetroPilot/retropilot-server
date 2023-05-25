@@ -4,7 +4,7 @@ import express from 'express';
 import log4js from 'log4js';
 
 import Queue from 'bull';
-import authenticationController from '../controllers/authentication';
+import authenticationController, { validateJWT } from '../controllers/authentication';
 import deviceController from '../controllers/devices';
 import storageController from '../controllers/storage';
 import { getAccountFromId, getAccountFromEmail } from '../controllers/users';
@@ -34,7 +34,7 @@ router.post('/auth/login', bodyParser.raw({ type: 'application/json' }), async (
     return res.status(401).json(login);
   }
 
-  const account = await authenticationController.getAccountFromJWT(login.jwt);
+  const account = await getAccountFromJWT(login.jwt);
 
   return res.status(200).json({
     success: true,
@@ -53,7 +53,7 @@ router.post('/auth/register', bodyParser.raw({ type: 'application/json' }), asyn
     return res.status(400).json({ success: false, msg: 'malformed request' });
   }
 
-  const account = getAccountFromEmail(email);
+  const account = authenticationController.getAccountFromEmail(email);
 
   if (account) {
     logger.info('Account Exists');
@@ -154,7 +154,7 @@ router.get('/v1.1/devices/:dongleId', getDevice, runAsyncWrapper(async (req, res
   } = device;
 
   const decoded = publicKey
-    ? await authenticationController.validateJWT(authorization, publicKey)
+    ? await validateJWT(authorization, publicKey)
     : null;
 
   if ((!decoded || decoded.identity !== dongleId)) {
@@ -221,7 +221,7 @@ router.get('/v1.1/devices/:dongleId/stats', getDevice, runAsyncWrapper(async (re
   }
 
   const decoded = device.public_key
-    ? await authenticationController.validateJWT(authorization, publicKey)
+    ? await validateJWT(authorization, publicKey)
     : null;
 
   if ((!decoded || decoded.identity !== dongleId)) {
@@ -273,7 +273,7 @@ router.get('/v1/devices/:dongleId/owner', getDevice, runAsyncWrapper(async (req,
   }
 
   const decoded = device.public_key
-    ? await authenticationController.validateJWT(authorization, device.public_key)
+    ? await validateJWT(authorization, device.public_key)
     : null;
 
   if ((!decoded || decoded.identity !== dongleId)) {
@@ -320,7 +320,7 @@ async function upload(req, res) {
   }
 
   const decoded = device.public_key
-    ? await authenticationController.validateJWT(authorization, device.public_key)
+    ? await validateJWT(authorization, device.public_key)
       .catch((err) => logger.error(err))
     : null;
 
@@ -498,7 +498,7 @@ router.post('/v2/pilotauth/', bodyParser.urlencoded({ extended: true }), async (
     return res.status(400).send('Malformed Request.');
   }
 
-  const decoded = await authenticationController.validateJWT(registerToken, publicKey);
+  const decoded = await validateJWT(registerToken, publicKey);
   if (!decoded || !decoded.register) {
     logger.error(`HTTP.V2.PILOTAUTH JWT token is invalid (${JSON.stringify(decoded)})`);
     return res.status(401).send('Unauthorised.');
