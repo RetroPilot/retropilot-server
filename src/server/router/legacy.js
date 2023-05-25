@@ -5,6 +5,7 @@ import log4js from 'log4js';
 
 import Queue from 'bull';
 import { getAccountFromJWT, validateJWT } from '../controllers/authentication';
+import authenticationController from '../controllers/authentication';
 import deviceController from '../controllers/devices';
 import storageController from '../controllers/storage';
 import { getAccountFromId, getAccountFromEmail } from '../controllers/users';
@@ -60,10 +61,10 @@ router.post('/auth/register', bodyParser.raw({ type: 'application/json' }), asyn
     return res.status(202).json(['OK']);
   }
 
-  const accountStatus = await createAccount(email, password);
-  if (accountStatus && accountStatus.status) {
-    return res.status(accountStatus.status).json(accountStatus);
-  }
+  // const accountStatus = await createAccount(email, password);
+  // if (accountStatus && accountStatus.status) {
+  //   return res.status(accountStatus.status).json(accountStatus);
+  // }
   return res.status(500).json({ success: false, msg: 'contact server admin' });
 });
 
@@ -76,7 +77,6 @@ router.post('/auth/register', bodyParser.raw({ type: 'application/json' }), asyn
 
 //   });
 // }));
-
 
 // DRIVE & BOOT/CRASH LOG FILE UPLOAD HANDLING
 router.put('/backend/post_upload', bodyParser.raw({
