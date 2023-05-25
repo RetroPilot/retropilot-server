@@ -60,26 +60,22 @@ router.post('/auth/register', bodyParser.raw({ type: 'application/json' }), asyn
     return res.status(202).json(['OK']);
   }
 
-  const accountStatus = await createAccount(req.body.email, req.body.password);
+  const accountStatus = await createAccount(email, password);
   if (accountStatus && accountStatus.status) {
     return res.status(accountStatus.status).json(accountStatus);
   }
   return res.status(500).json({ success: false, msg: 'contact server admin' });
 });
 
-router.get('/auth/sts', runAsyncWrapper(async (req, res) => {
+//router.get('/auth/sts', runAsyncWrapper(async (req, res) => {
 
 //AppID 004f072c6a16bea0000000003
 //Key K004japAKTpEbzWem54+ZM+ISMeVz3A
 
-  return res.status(200).json({
-    logUrls,
-    driveUrl,
-    name: `${dongleId}|${driveIdentifier}`,
-    driveIdentifier,
-    dongleId,
-  });
-}));
+//  return res.status(200).json({
+
+//  });
+//}));
 
 
 

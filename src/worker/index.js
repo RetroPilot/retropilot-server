@@ -30,4 +30,4 @@ try {
   logger.error('experimental individual segment processor crashed', err);
 }
 
-// worker();
+worker();
