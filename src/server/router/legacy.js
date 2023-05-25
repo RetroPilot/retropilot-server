@@ -4,10 +4,10 @@ import express from 'express';
 import log4js from 'log4js';
 
 import Queue from 'bull';
-import { validateJWT } from '../controllers/authentication';
+import { authenticationController, validateJWT } from '../controllers/authentication';
 import deviceController from '../controllers/devices';
 import storageController from '../controllers/storage';
-import { getAccountFromId } from '../controllers/users';
+import { getAccountFromId, getAccountFromEmail } from '../controllers/users';
 import { getDevice } from '../middlewares/devices';
 
 const segmentQueue = new Queue('new_segment', process.env.REDIS_SERVER);
@@ -23,6 +23,65 @@ function runAsyncWrapper(callback) {
 }
 
 // TODO(cameron): clean up this mess into separate files
+
+// Flowpilot Requests
+
+router.post('/auth/login', bodyParser.raw({ type: 'application/json' }), async (req, res) => {
+  const { email, password } = JSON.parse(req.body.toString());
+  logger.debug('email: ',email,' password: ',password);
+  const login = await authenticationController.signIn(email, password);
+  if (!login.success) {
+    return res.status(401).json(login);
+  }
+
+  const account = await authenticationController.getAccountFromJWT(login.jwt);
+
+  return res.status(200).json({
+    success: true,
+    message: {
+      auth_token: login.jwt,
+      user_id: account.dataValues.id,
+    },
+  });
+});
+
+router.post('/auth/register', bodyParser.raw({ type: 'application/json' }), async (req, res) => {
+  const { email, password } = JSON.parse(req.body.toString());
+  if (!email) {
+    // FIXME: use logger.warn
+    console.error('/auth/register/ - Malformed Request!');
+    return res.status(400).json({ success: false, msg: 'malformed request' });
+  }
+
+  const account = getAccountFromEmail(email);
+
+  if (account) {
+    logger.info("Account Exists");
+    return res.status(202).json(['OK']);
+  }
+
+  const accountStatus = await createAccount(req.body.email, req.body.password);
+  if (accountStatus && accountStatus.status) {
+    return res.status(accountStatus.status).json(accountStatus);
+  }
+  return res.status(500).json({ success: false, msg: 'contact server admin' });
+});
+
+router.get('/auth/sts', runAsyncWrapper(async (req, res) => {
+
+//AppID 004f072c6a16bea0000000003
+//Key K004japAKTpEbzWem54+ZM+ISMeVz3A
+
+  return res.status(200).json({
+    logUrls,
+    driveUrl,
+    name: `${dongleId}|${driveIdentifier}`,
+    driveIdentifier,
+    dongleId,
+  });
+}));
+
+
 
 // DRIVE & BOOT/CRASH LOG FILE UPLOAD HANDLING
 router.put('/backend/post_upload', bodyParser.raw({
